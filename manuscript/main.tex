@@ -4,7 +4,7 @@
 % Change to "preprint" to generate a non-anonymous version with page numbers.
 \usepackage[review]{acl}
 
-
+% ================= ACL PACKAGES =================
 \usepackage{times}
 \usepackage{latexsym}
 \usepackage[T1]{fontenc}
@@ -13,81 +13,15 @@
 \usepackage{inconsolata}
 \usepackage{graphicx}
 
+% ================= MY PACKAGES =================
 \usepackage{enumitem}
 \setlist[itemize]{noitemsep, nosep}
 
-% If the title and author information does not fit in the area allocated, uncomment the following
-%
-%\setlength\titlebox{<dim>}
-%
-% and set <dim> to something 5cm or larger.
-
 \title{To intervene or not to intervene}
 
-% Author information can be set in various styles:
-% For several authors from the same institution:
-% \author{Author 1 \and ... \and Author n \\
-	%         Address line \\ ... \\ Address line}
-% if the names do not fit well on one line use
-%         Author 1 \\ {\bf Author 2} \\ ... \\ {\bf Author n} \\
-% For authors from different institutions:
-% \author{Author 1 \\ Address line \\  ... \\ Address line
-	%         \And  ... \And
-	%         Author n \\ Address line \\ ... \\ Address line}
-% To start a separate ``row'' of authors use \AND, as in
-% \author{Author 1 \\ Address line \\  ... \\ Address line
-	%         \AND
-	%         Author 2 \\ Address line \\ ... \\ Address line \And
-	%         Author 3 \\ Address line \\ ... \\ Address line}
+\graphicspath{{../graphs}}
 
-\author{First Author \\
-	Affiliation / Address line 1 \\
-	Affiliation / Address line 2 \\
-	Affiliation / Address line 3 \\
-	\texttt{email@domain} \\\And
-	Second Author \\
-	Affiliation / Address line 1 \\
-	Affiliation / Address line 2 \\
-	Affiliation / Address line 3 \\
-	\texttt{email@domain} \\}
 
-%\author{
-	%  \textbf{First Author\textsuperscript{1}},
-	%  \textbf{Second Author\textsuperscript{1,2}},
-	%  \textbf{Third T. Author\textsuperscript{1}},
-	%  \textbf{Fourth Author\textsuperscript{1}},
-	%\\
-	%  \textbf{Fifth Author\textsuperscript{1,2}},
-	%  \textbf{Sixth Author\textsuperscript{1}},
-	%  \textbf{Seventh Author\textsuperscript{1}},
-	%  \textbf{Eighth Author \textsuperscript{1,2,3,4}},
-	%\\
-	%  \textbf{Ninth Author\textsuperscript{1}},
-	%  \textbf{Tenth Author\textsuperscript{1}},
-	%  \textbf{Eleventh E. Author\textsuperscript{1,2,3,4,5}},
-	%  \textbf{Twelfth Author\textsuperscript{1}},
-	%\\
-	%  \textbf{Thirteenth Author\textsuperscript{3}},
-	%  \textbf{Fourteenth F. Author\textsuperscript{2,4}},
-	%  \textbf{Fifteenth Author\textsuperscript{1}},
-	%  \textbf{Sixteenth Author\textsuperscript{1}},
-	%\\
-	%  \textbf{Seventeenth S. Author\textsuperscript{4,5}},
-	%  \textbf{Eighteenth Author\textsuperscript{3,4}},
-	%  \textbf{Nineteenth N. Author\textsuperscript{2,5}},
-	%  \textbf{Twentieth Author\textsuperscript{1}}
-	%\\
-	%\\
-	%  \textsuperscript{1}Affiliation 1,
-	%  \textsuperscript{2}Affiliation 2,
-	%  \textsuperscript{3}Affiliation 3,
-	%  \textsuperscript{4}Affiliation 4,
-	%  \textsuperscript{5}Affiliation 5
-	%\\
-	%  \small{
-		%    \textbf{Correspondence:} \href{mailto:email@domain}{email@domain}
-		%  }
-	%}
 
 \begin{document}
 	\maketitle
@@ -104,12 +38,14 @@
 	
 	\section{Related Work}
 	
-	\subsection{Human facilitators}
-	\textbf{Katerina, Dimitris} Add research on how humans typically behave when facilitating.
+	\subsection{Turn taking}
 	
-	\subsection{Facilitation detection}
-	\textbf{Dimitris} Add work that already tried to answer this question (Fora, WHoW, the second whow aussie paper).
+	Facilitation interventions can be seen as a specific case of turn-taking, the process with which humans take turns speaking in a discussion. The goal of turn-taking is typically to minimize idle time in discussions, while letting most participants take part in the discussion. This process is opaque and largely learned after years of social interaction for humans, while only experimental coarse-grained solutions have been devised for automated systems~\citep{frai_turn_taking}. One solution is to use a dedicated smaller model whose only task is to decide whether a larger model should speak~\citep{chen-etal-2025-whow}.\footnote{Curiously, the authors specifically use LLM finetuning for the smaller model, but provide no explanation for why a traditional transformer-based classifier wouldn't be sufficient for the task.} No such approach to our knowledge has been used in facilitative settings.%TODO: check this
 	
+	\subsection{Facilitation detection}	
+	Deciding when to intervene in a discussion is a matter of great importance. Intervening too early or too frequently may lead to users expressing frustration at being constantly interrupted, while intervening too late may lead to a significant escalation and derailment of the discussion~\citep{korre-etal-2025-evaluation, gao-etal-2025-moderation}. However, this task remains underexplored in literature, with current studies using ground-truth labels on which users are facilitators \citep{chen-etal-2025-whow, schroeder-etal-2024-fora, gao-etal-2025-moderation}. The task proves harder when considering that a facilitative comment is not necessarily made by dedicated facilitators; since in online environments, facilitative feedback may be primarily provided by the users themselves~\citep{umod}.
+	
+	While these works use LLM-as-a-judge models to annotate data in the field of facilitation, this may not be an obvious choice for the task of facilitation prediction. It has been demonstrated that LLM facilitators can not decide when they should intervene irrespective of instructions and model family/size. Instead, since these models are trained as chatbot assistants, they constantly attempt to speak~\citep{tsirmpas2025scalable}.
 	
 	\section{Dataset}
 
@@ -135,12 +71,18 @@
 
 
 	\subsection{Description}
-	\citet{korre-etal-2025-evaluation} provide a list of datasets relating to discussion facilitation. We combine all of these datasets, preprocess them (\ref{app:dataset:preprocessing}) and standardize their data according to a simple, unified schema (\ref{app:dataset:schema}). We thus create a multi-domain dataset focused around facilitation, called the Prosocial and Effective Facilitation in Konversations (PEFK). Unlike its predecessors, PEFK is both rich in size and comment-level information, allowing us to run thorough analysis between similar datasets.
+	\citet{korre-etal-2025-evaluation} provide a list of datasets relating to discussion facilitation. We combine all of these datasets (Table~\ref{tab:datasets}), preprocess them (\ref{app:dataset:preprocessing}) and standardize their data according to a simple, unified schema (\ref{app:dataset:schema}). Relevant statistics can be found in~\ref{app:dataset:stats}. 
+	
+	We thus create a multi-domain dataset focused around facilitation, called the ``Prosocial and Effective Facilitation in Konversations (PEFK)'' dataset. Unlike its predecessors, PEFK is large in size and rich in comment-level information, allowing us to run thorough analysis between similar datasets. In order to help research in the field of facilitation, we openly release PEFK under a CC-BY-SA license.\footnote{Since the Fora dataset \citep{schroeder-etal-2024-fora} is not publicly available, under an agreement we the authors we include the hashes of each comment instead of the original text. Researchers should contact the authors of Fora for access, after which they can merge their data with our completed dataset.} 
 	
 	
 	\subsection{Text-based vs. transcribed datasets}
-	\textbf{Dimitris, Katerina} Our datasets are fundamentally different depending on whether the data are transcripts or actual text data. Dimitris will add technical examples (i.e., how the transcriptions have a different format, e.g., comments that cut each other off). Katerina will add social science research on how oral and written speech differs. Thus, we run separate experiments for each of the two dataset types.
+
+	As the last column of Table~\ref{tab:datasets} would suggest, our data belong in two main sub-modalities; regular written text in the form of posts and comments, and oral transcripts. This reflects a rift in current facilitation research; while some previous work concerns itself with forums and online discussions, others are exclusively focused on live deliberation and debate. Even though we focus on the former, we believe that work from both sides contributes to our understanding of facilitation.
 	
+	The presence of these two sub-modalities necessitates separate experiments for either of them, since they represent different kinds of data. Posts and comments for instance are self-contained, while transcripts regularly feature interruptions, participants talking in parallel, and linguistic features that are necessary for coordination. They may also feature fundamentally different kinds of facilitation interventions.
+		
+	\textbf{Katerina will add social science research on how oral and written speech differs. Thus, we run separate experiments for each of the two dataset types.}
 	
 	\section{How to decide when to intervene?}
 	
@@ -238,7 +180,7 @@
 	\end{itemize}
 
 
-	\subsection{Dataset Schema}
+	\subsection{Schema}
 	\label{app:dataset:schema}
 	
 	Table~\ref{tab:dataset-columns} details the information available for each comment in the dataset. Some information, such as whether the person talking is a moderator / facilitator, is available only on some sub-datasets. Also note that the \texttt{is\_moderator} column may hold different definitions of what we consider  as moderator / facilitator. UMOD for instance considers facilitative comments made by users, while others such as Fora consider a comment facilitative if it was made by a dedicated facilitator.
@@ -265,7 +207,32 @@
 		\caption{The full set of columns used for each comment in the PEFK dataset.}
 		\label{tab:dataset-columns}
 	\end{table*}
-
+	
+	
+	\subsection{Statistics}
+	\label{app:dataset:stats}
+	
+	\begin{figure}[t]
+		\includegraphics[width=\columnwidth]{analysis_comments_per_discussion.png}
+		\caption{Comments per discussion on the PEFK dataset. Discussions over 40 comments have been clipped at the end of the x-axis for the purposes of graph readability.}
+		\label{fig:comments-per-discussion}
+	\end{figure}
+		
+	\begin{figure}[t]
+		\includegraphics[width=\columnwidth]{analysis_words_per_comment.png}
+		\caption{Words per comment on the PEFK dataset. Comments with 500 words have been clipped at the end of the x-axis for the purposes of graph readability.}
+		\label{fig:words-per-comment}
+	\end{figure}
+	
+	\begin{figure}[t]
+		\includegraphics[width=\columnwidth]{analysis_moderation_perc.png}
+		\caption{Percentage of moderated comments for each of the sub-datasets of PEFK.}
+		\label{fig:moderation-perc}
+	\end{figure}
+	
+	Figures~\ref{fig:comments-per-discussion},\ref{fig:words-per-comment} show the number of comments in each discussion, and the number of words per comment in our dataset respectively. We can see that most discussions are comprised of only a few comments, although there is a significant tail of very long discussions. Similarly, most comments are relatively short (<100 words), although there is again a long tail of very long comments.
+	
+	Figure~\ref{fig:moderation-perc} shows the percentage of comments made by facilitators for each of our datasets. In almost all datasets, a third of the comments are made by facilitators. We do not include the UMOD dataset, since its percentage is based on our thresholding (see~\ref{app:dataset:preprocessing}).
 
 		
 	\end{document}

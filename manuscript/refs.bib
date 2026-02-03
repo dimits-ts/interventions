@@ -217,3 +217,70 @@
 	ISBN = "979-8-89176-332-6",
 	abstract = "We present a survey of methods for assessing and enhancing the quality of online discussions, focusing on the potential of Large Language Models (LLMs). While online discourses aim, at least in theory, to foster mutual understanding, they often devolve into harmful exchanges, such as hate speech, threatening social cohesion and democratic values. Recent advancements in LLMs enable artificial facilitation agents to not only moderate content, but also actively improve the quality of interactions. Our survey synthesizes ideas from Natural Language Processing (NLP) and Social Sciences to provide (a) a new taxonomy on discussion quality evaluation, (b) an overview of intervention and facilitation strategies, (c) along with a new taxonomy of conversation facilitation datasets, (d) an LLM-oriented roadmap of good practices and future research directions, from technological and societal perspectives."
 }
+
+@inproceedings{gao-etal-2025-moderation,
+	title = "Moderation Matters: Measuring Conversational Moderation Impact in {E}nglish as a Second Language Group Discussion",
+	author = "Gao, Rena  and
+	Chen, Ming-Bin  and
+	Frermann, Lea  and
+	Lau, Jey Han",
+	editor = "Che, Wanxiang  and
+	Nabende, Joyce  and
+	Shutova, Ekaterina  and
+	Pilehvar, Mohammad Taher",
+	booktitle = "Findings of the Association for Computational Linguistics: ACL 2025",
+	month = jul,
+	year = "2025",
+	address = "Vienna, Austria",
+	publisher = "Association for Computational Linguistics",
+	url = "https://aclanthology.org/2025.findings-acl.106/",
+	doi = "10.18653/v1/2025.findings-acl.106",
+	pages = "2070--2095",
+	ISBN = "979-8-89176-256-5",
+	abstract = "English as a Second Language (ESL) speakers often struggle to engage in group discussions due to language barriers. While moderators can facilitate participation, few studies assess conversational engagement and evaluate moderation effectiveness. To address this gap, we develop a dataset comprising 17 sessions from an online ESL conversation club, which includes both moderated and non-moderated discussions. We then introduce an approach that integrates automatic ESL dialogue assessment and a framework that categorizes moderation strategies. Our findings indicate that moderators help improve the flow of topics and start/end a conversation. Interestingly, we find active acknowledgement and encouragement to be the most effective moderation strategy, while excessive information and opinion sharing by moderators has a negative impact. Ultimately, our study paves the way for analyzing ESL group discussions and the role of moderators in non-native conversation settings. Code and data are available at \url{https://github.com/RenaGao/L2Moderator}."
+}
+
+@misc{tsirmpas2025scalable,
+	title={Scalable Evaluation of Online Facilitation Strategies via Synthetic Simulation of Discussions}, 
+	author={Dimitris Tsirmpas and Ion Androutsopoulos and John Pavlopoulos},
+	year={2025},
+	eprint={2503.16505},
+	archivePrefix={arXiv},
+	primaryClass={cs.HC},
+	url={https://arxiv.org/abs/2503.16505}, 
+}
+
+@ARTICLE{frai_turn_taking,
+	AUTHOR={Nonomura, Ryota  and Mori, Hiroki },
+	TITLE={Who speaks next? Multi-party AI discussion leveraging the systematics of turn-taking in Murder Mystery games},
+	JOURNAL={Frontiers in Artificial Intelligence},
+	VOLUME={Volume 8 - 2025},
+	YEAR={2025},
+	URL={https://www.frontiersin.org/journals/artificial-intelligence/articles/10.3389/frai.2025.1582287},
+	DOI={10.3389/frai.2025.1582287},
+	ISSN={2624-8212},
+	ABSTRACT={IntroductionMulti-agent systems utilizing large language models (LLMs) have shown great promise in achieving natural dialogue. However, smooth dialogue control and autonomous decision making among agents still remain challenging.MethodsIn this study, we focus on conversational norms such as adjacency pairs and turn-taking found in conversation analysis and propose a new framework called “Murder Mystery Agents” that applies these norms to AI agents' dialogue control. As an evaluation target, we employed the “Murder Mystery” game, a reasoning-type table-top role-playing game that requires complex social reasoning and information manipulation. The proposed framework integrates next speaker selection based on adjacency pairs and a self-selection mechanism that takes agents' internal states into account to achieve more natural and strategic dialogue.ResultsTo verify the effectiveness of this new approach, we analyzed utterances that led to dialogue breakdowns and conducted automatic evaluation using LLMs, as well as human evaluation using evaluation criteria developed for the Murder Mystery game. Experimental results showed that the implementation of the next speaker selection mechanism significantly reduced dialogue breakdowns and improved the ability of agents to share information and perform logical reasoning.DiscussionThe results of this study demonstrate that the systematics of turn-taking in human conversation are also effective in controlling dialogue among AI agents, and provide design guidelines for more advanced multi-agent dialogue systems.}
+	}
+	
+	@inproceedings{chen-etal-2025-llamapie,
+		title = "{L}lama{PIE}: Proactive In-Ear Conversation Assistants",
+		author = "Chen, Tuochao  and
+		Batchelder, Nicholas Scott  and
+		Liu, Alisa  and
+		Smith, Noah A.  and
+		Gollakota, Shyamnath",
+		editor = "Che, Wanxiang  and
+		Nabende, Joyce  and
+		Shutova, Ekaterina  and
+		Pilehvar, Mohammad Taher",
+		booktitle = "Findings of the Association for Computational Linguistics: ACL 2025",
+		month = jul,
+		year = "2025",
+		address = "Vienna, Austria",
+		publisher = "Association for Computational Linguistics",
+		url = "https://aclanthology.org/2025.findings-acl.710/",
+		doi = "10.18653/v1/2025.findings-acl.710",
+		pages = "13801--13824",
+		ISBN = "979-8-89176-256-5",
+		abstract = "We introduce LlamaPIE, the first real-time proactive assistant designed to enhance human conversations through discreet, concise guidance delivered via hearable devices. Unlike traditional language models that require explicit user invocation, this assistant operates in the background, anticipating user needs without interrupting conversations. We address several challenges, including determining when to respond, crafting concise responses that enhance conversations, leveraging knowledge of the user for context-aware assistance, and real-time, on-device processing. To achieve this, we construct a semi-synthetic dialogue dataset and propose a two-model pipeline: a small model that decides when to respond and a larger model that generates the response. We evaluate our approach on real-world datasets, demonstrating its effectiveness in providing helpful, unobtrusive assistance. User studies with our assistant, implemented on Apple Silicon M2 hardware, show a strong preference for the proactive assistant over both a baseline with no assistance and a reactive AI assistant, highlighting the potential of LlamaPIE to enhance live conversations."
+	}
