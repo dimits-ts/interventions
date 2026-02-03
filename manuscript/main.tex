@@ -13,6 +13,9 @@
 \usepackage{inconsolata}
 \usepackage{graphicx}
 
+\usepackage{enumitem}
+\setlist[itemize]{noitemsep, nosep}
+
 % If the title and author information does not fit in the area allocated, uncomment the following
 %
 %\setlength\titlebox{<dim>}
@@ -110,8 +113,29 @@
 	
 	\section{Dataset}
 
+
+	\begin{table*}[ht]
+		\centering
+		\begin{tabular}{|l|c|l|l|}
+			\hline
+			\textbf{Name} & \textbf{\#comments} & \textbf{Domain} & \textbf{Format} \\ \hline
+			WikiDisputes \citeyearpar{wikidisputes} & 96,320 & Forum & Text \\ \hline
+			WikiTactics \citeyearpar{wikitactics} & 3,850 & Forum & Text \\ \hline
+			WikiConv \citeyearpar{wikiconv} & 17,806,373 & Forum & Text \\ \hline
+			Conversations Gone Awry / CMV II \citeyearpar{cmv_awry2}& 40,607 & Forum & Text \\ \hline
+			CeRI \citeyearpar{ceri} & 3,700 & Forum & Text \\ \hline
+			User Moderation (UMOD) \citeyearpar{umod}& 2,000 & Forum & Text \\ \hline
+			Intelligence Squared 2 (IQ2) \citeyearpar{zhang-etal-2016-conversational}& 34,245 & Debate & Oral \\ \hline
+			Why How Who (WHoW) \citeyearpar{chen-etal-2025-whow} & 25,542 & Radio / TV & Oral \\ \hline
+			Fora \citeyearpar{schroeder-etal-2024-fora} & 39,438 & Deliberation & Oral \\ \hline
+		\end{tabular}
+		\caption{The datasets used in PEFK. We include a large variety of domains, and two different sources; text-only datasets, and transcripts from oral discussions.}
+		\label{tab:datasets}
+	\end{table*}
+
+
 	\subsection{Description}
-	\textbf{Dimitris}. Transfer basic information from project github to here including stats, tables and licensing.
+	\citet{korre-etal-2025-evaluation} provide a list of datasets relating to discussion facilitation. We combine all of these datasets, preprocess them (\ref{app:dataset:preprocessing}) and standardize their data according to a simple, unified schema (\ref{app:dataset:schema}). We thus create a multi-domain dataset focused around facilitation, called the Prosocial and Effective Facilitation in Konversations (PEFK). Unlike its predecessors, PEFK is both rich in size and comment-level information, allowing us to run thorough analysis between similar datasets.
 	
 	
 	\subsection{Text-based vs. transcribed datasets}
@@ -154,7 +178,94 @@
 	
 	
 
-	%\bibliography{refs}
+	\bibliography{refs}
+	\clearpage
+	\appendix
+	
+	\section{Dataset details}
+	
+	\subsection{Preprocessing}
+	\label{app:dataset:preprocessing}
+	
+	\paragraph{General}
+	\begin{itemize}
+		\item We exclude comments with no text.
+		\item We exclude discussions with less than two distinct participants.
+		\item We exclude discussions which are common between wikitactics and wikiconv as well as wikidisputes and wikiconv.
+		\begin{itemize}
+			\item There may be duplicate discussions between wikidisputes and wikitactics, but we allow them since they feature complementary information.
+		\end{itemize}
+	\end{itemize}
+	
+	\paragraph{Wikiconv}
+	\begin{itemize}
+		\item The Wikiconv corpus does not contain information about which user is a moderator/facilitator. Therefore, all comments relating to Wikiconv are tagged as non-moderators.
+		\item Additionally, we follow the instructions of the original researchers \cite{wikiconv}, and select only discussions which have at least two comments by different users.
+		\begin{itemize}
+			\item Wikipedia (thankfully) does not track users who log in with only an IP address (in the original dataset, their \texttt{user\_id} is always set to 0 and their username is of the form \texttt{211.111.111.xxx}. We consider each such username to be a separate user.
+			\item Due to the size of the dataset, we have to partially load it during preprocessing. Thus, there is a small chance every 100,000 records that a discussion is marked as a false negative and a part of it gets discarded.
+			\item We only include English comments in the final dataset. We use a small, efficient library (\texttt{py3langid}) for language recognition, due to the large size of Wikiconv. Non-English comments are discarded before selecting valid discussions (see point above).
+		\end{itemize}
+	\end{itemize}
+	
+	\paragraph{Wikitactics}
+	\begin{itemize}
+		\item We infer facilitative actions by whether the comment belongs in any of the following categories:
+		\begin{itemize}
+			\item Asking questions
+			\item Coordinating edits
+			\item Providing clarification
+			\item Suggesting a compromise
+			\item Contextualisation
+		\end{itemize}
+		\item The above tactics are a subset of the Coordinative labels used in the WikiTactics paper. They were selected because they are not used necessarily on 1-1 discussions; they could reasonably be applied by third-party participants. Contrast them with other Coordinative labels such as ``Conceding/recanting'' and ``I don't know''.
+	\end{itemize}
+	
+	\paragraph{Wikidisputes}
+	\begin{itemize}
+		\item Since only 0.03\% of the comments in the dataset are made by moderators, we mark the dataset as not supporting moderation.
+	\end{itemize}
+	
+	\paragraph{UMOD}
+	\begin{itemize}
+		\item Facilitative actions are marked as a gradient from 0 (no facilitation) to 1 (full facilitation). We adopt a threshold of 0.75 to consider an action as facilitative, with more than 50\% annotator agreement (measured as entropy in the original dataset).
+	\end{itemize}
+	
+	\paragraph{CMV-AWRY2}
+	\begin{itemize}
+		\item We mark a discussion as escalated when the derailment value (from the official dataset) is in the 60th upper percentile.
+		\item We remove deleted (``[deleted]'') comments.
+	\end{itemize}
+
+
+	\subsection{Dataset Schema}
+	\label{app:dataset:schema}
+	
+	Table~\ref{tab:dataset-columns} details the information available for each comment in the dataset. Some information, such as whether the person talking is a moderator / facilitator, is available only on some sub-datasets. Also note that the \texttt{is\_moderator} column may hold different definitions of what we consider  as moderator / facilitator. UMOD for instance considers facilitative comments made by users, while others such as Fora consider a comment facilitative if it was made by a dedicated facilitator.
+	
+	\begin{table*}[ht]
+		\centering
+		\begin{tabular}{|l|l|p{10cm}|}
+			\hline
+			\textbf{Name} & \textbf{Type} & \textbf{Description} \\ \hline
+			conv\_id & string & The discussion's ID. Comments under the same discussion refer to the same discussion ID. \\ \hline
+			message\_id & string & The message's (comment's) unique ID. \\ \hline
+			reply\_to & string & The ID of the comment which the current comment responds to. nan if the comment does not respond to another comment (e.g., it's the Original Post (OP)). \\ \hline
+			user & string & Username or hash of the user that posted the comment \\ \hline
+			is\_moderator & bool & Whether the user is a moderator/facilitator. \\ \hline
+			moderation\_supported & bool & True if the moderation labels are directly computed from the original dataset \\ \hline
+			escalated & bool & A discussion-level measure denoting discussions which have been derailed \\ \hline
+			escalation\_supported & bool & True if the escalation labels are directly computed from the original dataset \\ \hline
+			text & string & The contents of the comment \\ \hline
+			dataset & string & The dataset from which this comment originated from \\ \hline
+			notes & JSON & A dictionary holding notable dataset-specific information \\ \hline
+			toxicity & float & The ``toxicity'' score given to the comment by the Perspective API \\ \hline
+			severe\_toxicity & float & The ``severe toxicity'' score given to the comment by the Perspective API \\ \hline
+		\end{tabular}
+		\caption{The full set of columns used for each comment in the PEFK dataset.}
+		\label{tab:dataset-columns}
+	\end{table*}
+
 
 		
 	\end{document}
