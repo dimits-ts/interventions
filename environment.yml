@@ -1,0 +1,28 @@
+name: pefk-dataset
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python>=3.13
+  - pandas
+  - numpy
+  - seaborn
+  - matplotlib
+  - tqdm
+  - openpyxl
+  - moreutils
+  - datasets
+  - scikit-learn
+  - notebook 
+  - ipywidgets
+  - coloredlogs
+  - shap
+  - pip
+  - pip:
+      - py3langid
+      - accelerate>=0.26.0
+      - torch
+      - transformers
+      - tensorboard
+      - bitsandbytes
+      - sentence-transformers
