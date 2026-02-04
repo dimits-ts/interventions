@@ -1,4 +1,4 @@
-name: pefk-dataset
+name: interventions
 channels:
   - defaults
   - conda-forge
@@ -9,20 +9,11 @@ dependencies:
   - seaborn
   - matplotlib
   - tqdm
-  - openpyxl
   - moreutils
   - datasets
   - scikit-learn
-  - notebook 
-  - ipywidgets
   - coloredlogs
   - shap
   - pip
   - pip:
-      - py3langid
-      - accelerate>=0.26.0
-      - torch
-      - transformers
-      - tensorboard
-      - bitsandbytes
-      - sentence-transformers
+      - syndisco
