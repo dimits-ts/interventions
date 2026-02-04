@@ -3,13 +3,6 @@
 LOG_FILE="logs/pefk_facilitation.log"
 touch $LOG_FILE
 
-python src/facilitation/llm_inference.py \
-    --input_csv data/input/intervention.csv \
-    --output_csv data/output/llm_intervention_test.csv \
-    --system_prompt config/interventions/intervention.md \
-    --hf_model_url unsloth/Llama-3.3-70B-Instruct-bnb-4bit \
-    --hf_model_name llama3.3-70b | tee "$LOG_FILE"
-
 echo "Training moderation detection models..."
 python scripts/facilitation/train.py \
     --output_dir=checkpoints/mod/all \
