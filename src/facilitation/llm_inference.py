@@ -8,6 +8,7 @@ from tqdm.auto import tqdm
 
 TEXT_COLUMN = "discussion"
 OUTPUT_COLUMN = "response"
+MAX_LENGTH_CHARS = 5000
 
 
 def main(
@@ -28,7 +29,7 @@ def main(
 
     outputs = []
     for _, row in tqdm(df.iterrows(), total=len(df)):
-        text = str(row[TEXT_COLUMN])
+        text = str(row[TEXT_COLUMN])[:MAX_LENGTH_CHARS]
         res = llm.prompt(
             system_prompt=SYSTEM_PROMPT,
             user_prompt=text,
