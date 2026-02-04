@@ -68,26 +68,27 @@
     
 	\section{Dataset}
     
-	\begin{table*}[ht]
-		\centering
+    \begin{table*}[ht]
+    	\centering
         \small
-		\begin{tabular}{lcll}
-			\toprule
-			\textbf{Name} & \textbf{\#comments} & \textbf{Domain} & \textbf{Format} \\ \hline
-			WikiDisputes \citeyearpar{wikidisputes} & 96,320 & Forum & Text \\ 
-			WikiTactics \citeyearpar{wikitactics} & 3,850 & Forum & Text \\ 
-			WikiConv \citeyearpar{wikiconv} & 17,806,373 & Forum & Text \\ 
-			Conversations Gone Awry / CMV II \citeyearpar{cmv_awry2}& 40,607 & Forum & Text \\ 
-			CeRI \citeyearpar{ceri} & 3,700 & Forum & Text \\ 
-			User Moderation (UMOD) \citeyearpar{umod}& 2,000 & Forum & Text \\ 
-			Intelligence Squared 2 (IQ2) \citeyearpar{zhang-etal-2016-conversational}& 34,245 & Debate & Oral \\ 
-			Why How Who (WHoW) \citeyearpar{chen-etal-2025-whow} & 25,542 & Radio / TV & Oral \\ 
-			Fora \citeyearpar{schroeder-etal-2024-fora} & 39,438 & Deliberation & Oral \\ 
+    	\begin{tabular}{lcccl}
+    		\toprule
+    		\textbf{Name} & \textbf{\#Comments} & \textbf{\#Discussions} & \textbf{Domain} & \textbf{Format} \\ \hline
+    		WikiDisputes \citeyearpar{wikidisputes} & 96,320 & 8,727 & Forum & Text \\ 
+    		WikiTactics \citeyearpar{wikitactics} & 3,850 & 213 & Forum & Text \\ 
+    		WikiConv \citeyearpar{wikiconv} & 17,806,373 & 4,486,983 & Forum & Text \\ 
+    		Conversations Gone Awry / CMV II \citeyearpar{cmv_awry2} & 40,607 & 6,691 & Forum & Text \\ 
+    		CeRI \citeyearpar{ceri} & 3,700 & 132 & Forum & Text \\ 
+    		User Moderation (UMOD) \citeyearpar{umod} & 2,000 & 1,000 & Forum & Text \\ 
+    		Intelligence Squared 2 (IQ2) \citeyearpar{zhang-etal-2016-conversational} & 34,245 & 108 & Debate & Oral \\ 
+    		Why How Who (WHoW) \citeyearpar{chen-etal-2025-whow} & 25,542 & 178 & Radio / TV & Oral \\ 
+    		Fora \citeyearpar{schroeder-etal-2024-fora} & 39,438 & 262 & Deliberation & Oral \\ 
             \bottomrule
-		\end{tabular}
-		\caption{The datasets used in PEFK. We include a large variety of domains, and two different sources; text-only datasets, and transcripts from oral discussions.}
-		\label{tab:datasets}
-	\end{table*}
+    	\end{tabular}
+    	\caption{The datasets used in PEFK with accompagnying post-processing statistics. We include a large variety of domains, and two different sources; text-only datasets, and transcripts from oral discussions. All datasets include multi-participant discussions, besides UMOD, which contains comment pairs.}
+    	\label{tab:datasets}
+    \end{table*}
+
 
 
 	\subsection{Description}

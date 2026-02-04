@@ -39,28 +39,31 @@ def convert_bytes(num):
 
 def comments_per_discussion_plot(df: pd.DataFrame, graph_dir: Path) -> None:
     disc_sizes = (
-        df.groupby("conv_id").size().reset_index(name="comments_per_disc")
+        df.groupby(["dataset", "conv_id"])
+        .size()
+        .reset_index(name="comments_per_disc")
     )
 
-    # Cap at 40 because there is a tail going up to 1200 comments
+    # Cap at 200 because there is a tail going up to 1200 comments
     disc_sizes["comments_per_disc"] = disc_sizes["comments_per_disc"].clip(
-        upper=40
+        upper=200
     )
 
     plt.figure(figsize=(8, 5))
     sns.histplot(
         data=disc_sizes,
         x="comments_per_disc",
-        bins=40,
-        multiple="stack",
-        common_norm=True,
+        hue="dataset",
+        stat="density",
+        common_norm=False,
+        bins=40,  # do NOT let this go to auto
     )
-    plt.title("Distribution of Comments per Discussion")
-    plt.xlabel("Number of Comments (capped at 40)")
-    plt.ylabel("Number of Discussions")
+    plt.title("Distribution of Comments per Discussion (Density)")
+    plt.xlabel("Number of Comments per Discussion (capped at 200)")
+    plt.ylabel("Density")
     plt.tight_layout()
 
-    io.save_plot(graph_dir / "analysis_comments_per_discussion.png")
+    util.graphs.save_plot(graph_dir / "analysis_comments_per_discussion.png")
 
 
 def moderation_plot(df: pd.DataFrame, graph_dir: Path) -> float:
@@ -69,6 +72,10 @@ def moderation_plot(df: pd.DataFrame, graph_dir: Path) -> float:
         .mean()
         .reset_index(name="moderator_percent")
     )
+    # exclude datasets where moderation is not supported
+    moderator_percent = moderator_percent[
+        moderator_percent.moderator_percent != 0
+    ]
     moderator_percent["moderator_percent"] *= 100
     order = moderator_percent.sort_values(
         "moderator_percent", ascending=False
@@ -77,18 +84,44 @@ def moderation_plot(df: pd.DataFrame, graph_dir: Path) -> float:
     plt.figure(figsize=(8, 5))
     sns.barplot(
         data=moderator_percent,
-        x="dataset",
-        y="moderator_percent",
-        color="steelblue",
+        y="dataset",
+        x="moderator_percent",
+        color="black",
         order=order,
     )
     plt.title("Percentage of Moderator Comments per Dataset")
-    plt.xlabel("Dataset")
-    plt.ylabel("Percentage (%)")
-    plt.xticks(rotation=45)
+    plt.ylabel("Dataset")
+    plt.xlabel("Percentage (%)")
     plt.tight_layout()
 
     util.graphs.save_plot(graph_dir / "analysis_moderation_perc.png")
+
+
+def words_per_comment_plot(df: pd.DataFrame, graph_dir: Path) -> None:
+    df = df.copy()
+
+    df["words_per_comment"] = (
+        df.text.astype(str).apply(lambda x: len(x.split())).astype(int)
+    )
+
+    # Cap long tail (optional but very useful for readability)
+    df["words_per_comment"] = df["words_per_comment"].clip(upper=200)
+
+    plt.figure(figsize=(8, 5))
+    sns.histplot(
+        data=df,
+        x="words_per_comment",
+        hue="dataset",
+        bins=50, # do NOT let this go to auto
+        stat="density",
+        common_norm=False,
+    )
+    plt.title("Distribution of Words per Comment (Density)")
+    plt.xlabel("Words per Comment (capped at 200)")
+    plt.ylabel("Density")
+    plt.tight_layout()
+
+    util.graphs.save_plot(graph_dir / "analysis_words_per_comment.png")
 
 
 def main(args):
@@ -99,7 +132,8 @@ def main(args):
 
     print("Loading dataset to extract statistics...")
     df = util.io.progress_load_csv(csv_path)
-    
+
+    """
     print("*" * 25)
     print("Comments per discussion:")
     print(df.groupby("conv_id").size().describe())
@@ -121,11 +155,11 @@ def main(args):
         .astype(int)
         .describe()
     )
-    
+    """
     print("*" * 25)
     print(f"Dataset total size: {convert_bytes(csv_path.stat().st_size)}")
 
-    comments_per_discussion_plot(df, graph_dir)
+    words_per_comment_plot(df, graph_dir)
     comments_per_discussion_plot(df, graph_dir)
     moderation_plot(df, graph_dir=graph_dir)
 

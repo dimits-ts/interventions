@@ -96,3 +96,4 @@ def save_plot(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(path, bbox_inches="tight", dpi=300)
     print(f"Figure saved to {path.resolve()}")
+    plt.close()
