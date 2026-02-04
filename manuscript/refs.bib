@@ -284,3 +284,22 @@
 		ISBN = "979-8-89176-256-5",
 		abstract = "We introduce LlamaPIE, the first real-time proactive assistant designed to enhance human conversations through discreet, concise guidance delivered via hearable devices. Unlike traditional language models that require explicit user invocation, this assistant operates in the background, anticipating user needs without interrupting conversations. We address several challenges, including determining when to respond, crafting concise responses that enhance conversations, leveraging knowledge of the user for context-aware assistance, and real-time, on-device processing. To achieve this, we construct a semi-synthetic dialogue dataset and propose a two-model pipeline: a small model that decides when to respond and a larger model that generates the response. We evaluate our approach on real-world datasets, demonstrating its effectiveness in providing helpful, unobtrusive assistance. User studies with our assistant, implemented on Apple Silicon M2 hardware, show a strong preference for the proactive assistant over both a baseline with no assistance and a reactive AI assistant, highlighting the potential of LlamaPIE to enhance live conversations."
 	}
+
+@inproceedings{movva-etal-2024-annotation,
+    title = "Annotation alignment: Comparing {LLM} and human annotations of conversational safety",
+    author = "Movva, Rajiv  and
+      Koh, Pang Wei  and
+      Pierson, Emma",
+    editor = "Al-Onaizan, Yaser  and
+      Bansal, Mohit  and
+      Chen, Yun-Nung",
+    booktitle = "Proceedings of the 2024 Conference on Empirical Methods in Natural Language Processing",
+    month = nov,
+    year = "2024",
+    address = "Miami, Florida, USA",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2024.emnlp-main.511/",
+    doi = "10.18653/v1/2024.emnlp-main.511",
+    pages = "9048--9062",
+    abstract = "Do LLMs align with human perceptions of safety? We study this question via *annotation alignment*, the extent to which LLMs and humans agree when annotating the safety of user-chatbot conversations. We leverage the recent DICES dataset (Aroyo et al. 2023), in which 350 conversations are each rated for safety by 112 annotators spanning 10 race-gender groups. GPT-4 achieves a Pearson correlation of $r=0.59$ with the average annotator rating, higher than the median annotator{'}s correlation with the average ($r=0.51$). We show that larger datasets are needed to resolve whether GPT-4 exhibits disparities in how well it correlates with different demographic groups. Also, there is substantial idiosyncratic variation in correlation within groups, suggesting that race {\&} gender do not fully capture differences in alignment. Finally, we find that GPT-4 cannot predict when one demographic group finds a conversation more unsafe than another."
+}
