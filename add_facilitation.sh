@@ -1,4 +1,5 @@
-!/bin/bash
+#!/bin/bash
+
 LOG_FILE="logs/pefk_facilitation.log"
 touch $LOG_FILE
 

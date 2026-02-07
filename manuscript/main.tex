@@ -16,10 +16,16 @@
 % ================= MY PACKAGES =================
 \usepackage{enumitem}
 \setlist[itemize]{noitemsep, nosep}
+\usepackage{booktabs}
+
+
+\usepackage{xcolor}
+\newcommand{\kk}[1]{\textcolor{magenta}{#1}}
+
 
 \title{To intervene or not to intervene}
 
-\graphicspath{{../graphs}}
+\graphicspath{{../graphs} {graphs}}
 
 
 
@@ -34,46 +40,61 @@
 	
 	\section{Introduction}
 	\textbf{Dimitris, Katerina}
-	
+	\begin{figure}[ht]
+		\includegraphics[width=\columnwidth]{intro.drawio.png}
+		\caption{At any point in a discussion, the facilitator must decide whether to intervene or not. Not intervening when the situation calls for it may lead to escalation and derailment. On the other hand, intervening when the discussion is already going well, may lead to irritation and toxicity from participants.}
+		\label{fig:intro}
+	\end{figure}
 	
 	\section{Related Work}
+
+    \subsection{What are facilitative interventions?}
+    \label{sec:related:interventions}
+    
+    Facilitation (or conversational moderation) refers to the active participation of people in order to improve discussions~\citep{korre-etal-2025-evaluation}. Relevant work assumes that facilitation is conducted by specially trained staff~\citep{schroeder-etal-2024-fora, ceri}, users appointed by the community [CITE], or specialized professionals~\citep{chen-etal-2025-whow}. It is generally accepted that all comments made by a facilitator should be considered facilitative interventions; for instance, all such comments are assumed to follow some social strategy~\citep{chen-etal-2025-whow, schroeder-etal-2024-fora}.
+    
+    An alternative view however suggests that facilitative comments can be (and indeed are most frequently) made by participants themselves~\citep{umod}. In this case, this task is no longer about detecting or predicting whether \emph{a facilitator would speak}, but rather the much more difficult task of whether the comment is \emph{facilitative in nature}.
+    
 	
 	\subsection{Turn taking}
 	
-	Facilitation interventions can be seen as a specific case of turn-taking, the process with which humans take turns speaking in a discussion. The goal of turn-taking is typically to minimize idle time in discussions, while letting most participants take part in the discussion. This process is opaque and largely learned after years of social interaction for humans, while only experimental coarse-grained solutions have been devised for automated systems~\citep{frai_turn_taking}. One solution is to use a dedicated smaller model whose only task is to decide whether a larger model should speak~\citep{chen-etal-2025-whow}.\footnote{Curiously, the authors specifically use LLM finetuning for the smaller model, but provide no explanation for why a traditional transformer-based classifier wouldn't be sufficient for the task.} No such approach to our knowledge has been used in facilitative settings.%TODO: check this
+	Facilitation interventions can be seen as a specific case of turn-taking, the process with which humans take turns speaking in a discussion. The goal of turn-taking is typically to minimize idle time in discussions, while letting most participants take part in the discussion. This process is opaque and largely learned after years of social interaction for humans, while only experimental coarse-grained solutions have been devised for automated systems~\citep{frai_turn_taking}. One solution is to use a dedicated smaller model whose only task is to decide whether a larger model should speak~\citep{chen-etal-2025-whow}.\footnote{The authors specifically use LLM finetuning for the smaller model, but provide no explanation for why a traditional transformer-based classifier wouldn't be sufficient for the task.} No such approach to our knowledge has been used in facilitative settings.%TODO: check this
 	
-	\subsection{Facilitation detection}	
+	\subsection{Facilitation detection}
 	Deciding when to intervene in a discussion is a matter of great importance. Intervening too early or too frequently may lead to users expressing frustration at being constantly interrupted, while intervening too late may lead to a significant escalation and derailment of the discussion~\citep{korre-etal-2025-evaluation, gao-etal-2025-moderation}. However, this task remains underexplored in literature, with current studies using ground-truth labels on which users are facilitators \citep{chen-etal-2025-whow, schroeder-etal-2024-fora, gao-etal-2025-moderation}. The task proves harder when considering that a facilitative comment is not necessarily made by dedicated facilitators; since in online environments, facilitative feedback may be primarily provided by the users themselves~\citep{umod}.
 	
 	While these works use LLM-as-a-judge models to annotate data in the field of facilitation, this may not be an obvious choice for the task of facilitation prediction. It has been demonstrated that LLM facilitators can not decide when they should intervene irrespective of instructions and model family/size. Instead, since these models are trained as chatbot assistants, they constantly attempt to speak~\citep{tsirmpas2025scalable}.
-	
+
+    
 	\section{Dataset}
+    
+    \begin{table*}[ht]
+    	\centering
+        \small
+    	\begin{tabular}{lcccl}
+    		\toprule
+    		\textbf{Name} & \textbf{\#Comments} & \textbf{\#Discussions} & \textbf{Domain} & \textbf{Format} \\ \hline
+    		WikiDisputes \citeyearpar{wikidisputes} & 96,320 & 8,727 & Forum & Text \\ 
+    		WikiTactics \citeyearpar{wikitactics} & 3,850 & 213 & Forum & Text \\ 
+    		WikiConv \citeyearpar{wikiconv} & 17,806,373 & 4,486,983 & Forum & Text \\ 
+    		Conversations Gone Awry / CMV II \citeyearpar{cmv_awry2} & 40,607 & 6,691 & Forum & Text \\ 
+    		CeRI \citeyearpar{ceri} & 3,700 & 132 & Forum & Text \\ 
+    		User Moderation (UMOD) \citeyearpar{umod} & 2,000 & 1,000 & Forum & Text \\ 
+    		Intelligence Squared 2 (IQ2) \citeyearpar{zhang-etal-2016-conversational} & 34,245 & 108 & Debate & Oral \\ 
+    		Why How Who (WHoW) \citeyearpar{chen-etal-2025-whow} & 25,542 & 178 & Radio / TV & Oral \\ 
+    		Fora \citeyearpar{schroeder-etal-2024-fora} & 39,438 & 262 & Deliberation & Oral \\ 
+            \bottomrule
+    	\end{tabular}
+    	\caption{The datasets used in PEFK with accompagnying post-processing statistics. We include a large variety of domains, and two different sources; text-only datasets, and transcripts from oral discussions. All datasets include multi-participant discussions, besides UMOD, which contains comment pairs.}
+    	\label{tab:datasets}
+    \end{table*}
 
-
-	\begin{table*}[ht]
-		\centering
-		\begin{tabular}{|l|c|l|l|}
-			\hline
-			\textbf{Name} & \textbf{\#comments} & \textbf{Domain} & \textbf{Format} \\ \hline
-			WikiDisputes \citeyearpar{wikidisputes} & 96,320 & Forum & Text \\ \hline
-			WikiTactics \citeyearpar{wikitactics} & 3,850 & Forum & Text \\ \hline
-			WikiConv \citeyearpar{wikiconv} & 17,806,373 & Forum & Text \\ \hline
-			Conversations Gone Awry / CMV II \citeyearpar{cmv_awry2}& 40,607 & Forum & Text \\ \hline
-			CeRI \citeyearpar{ceri} & 3,700 & Forum & Text \\ \hline
-			User Moderation (UMOD) \citeyearpar{umod}& 2,000 & Forum & Text \\ \hline
-			Intelligence Squared 2 (IQ2) \citeyearpar{zhang-etal-2016-conversational}& 34,245 & Debate & Oral \\ \hline
-			Why How Who (WHoW) \citeyearpar{chen-etal-2025-whow} & 25,542 & Radio / TV & Oral \\ \hline
-			Fora \citeyearpar{schroeder-etal-2024-fora} & 39,438 & Deliberation & Oral \\ \hline
-		\end{tabular}
-		\caption{The datasets used in PEFK. We include a large variety of domains, and two different sources; text-only datasets, and transcripts from oral discussions.}
-		\label{tab:datasets}
-	\end{table*}
 
 
 	\subsection{Description}
 	\citet{korre-etal-2025-evaluation} provide a list of datasets relating to discussion facilitation. We combine all of these datasets (Table~\ref{tab:datasets}), preprocess them (\ref{app:dataset:preprocessing}) and standardize their data according to a simple, unified schema (\ref{app:dataset:schema}). Relevant statistics can be found in~\ref{app:dataset:stats}. 
 	
-	We thus create a multi-domain dataset focused around facilitation, called the ``Prosocial and Effective Facilitation in Konversations (PEFK)'' dataset. Unlike its predecessors, PEFK is large in size and rich in comment-level information, allowing us to run thorough analysis between similar datasets. In order to help research in the field of facilitation, we openly release PEFK under a CC-BY-SA license.\footnote{Since the Fora dataset \citep{schroeder-etal-2024-fora} is not publicly available, under an agreement we the authors we include the hashes of each comment instead of the original text. Researchers should contact the authors of Fora for access, after which they can merge their data with our completed dataset.} 
+	We thus create a multi-domain dataset focused around facilitation, called the ``Prosocial and Effective Facilitation in Konversations (PEFK)'' dataset. Unlike its predecessors, PEFK is large in size and rich in comment-level information, allowing us to run thorough analysis between similar datasets. In order to help research in the field of facilitation, we openly release PEFK under a CC-BY-SA license.\footnote{The Fora dataset \citep{schroeder-etal-2024-fora} is not publicly available. Under an agreement with the authors we include the hashes of each comment instead of the original text. Researchers should contact the authors of Fora for access, after which they can merge their data with our completed dataset.} 
 	
 	
 	\subsection{Text-based vs. transcribed datasets}
@@ -81,24 +102,35 @@
 	As the last column of Table~\ref{tab:datasets} would suggest, our data belong in two main sub-modalities; regular written text in the form of posts and comments, and oral transcripts. This reflects a rift in current facilitation research; while some previous work concerns itself with forums and online discussions, others are exclusively focused on live deliberation and debate. Even though we focus on the former, we believe that work from both sides contributes to our understanding of facilitation.
 	
 	The presence of these two sub-modalities necessitates separate experiments for either of them, since they represent different kinds of data. Posts and comments for instance are self-contained, while transcripts regularly feature interruptions, participants talking in parallel, and linguistic features that are necessary for coordination. They may also feature fundamentally different kinds of facilitation interventions.
-		
-	\textbf{Katerina will add social science research on how oral and written speech differs. Thus, we run separate experiments for each of the two dataset types.}
 	
 	\section{How to decide when to intervene?}
 	
 	\subsection{Do not decide}
-	\textbf{Dimitris}. What most platforms do is to use flagging and reports to decide when to intervene. Mention Grok as a facilitative agent that works by invocation only. Briefly talk about advantages and disadvantages of current approach.
+	\textbf{Dimitris. What most platforms do is to use flagging and reports to decide when to intervene. Mention Grok as a facilitative agent that works by invocation only. Briefly talk about advantages and disadvantages of current approach.}
 	
 	
 	\subsection{Use humans}
 	
 	\subsubsection{Merits and disadvantages}
-	\textbf{Katerina}. Humans may be the ``best'' classifier since they understand context and social behavior best, but they are not scalable (cite our survey). 
-	Dimitris can add cost calculations for a hypothetical scenario to drive point home.
+	\kk{\citet{korre-etal-2025-evaluation} state that a fully-automated facilitation is still out of our reach as LLMs tend to be very intruding and repetitive, and fixate on the moderation side of facilitation. Human facilitators, on the other hand, can step in the conversation with a more empathetic outlook, take into deep consideration the context of the conversation, while also being more sensitive to the differences and causes of certain social behaviors. However, recruiting human facilitators, which also indicates a sort of expertise, is not a scalable process. In terms of LLM and human annotation alignment, \cite{movva-etal-2024-annotation} focusing on online safety contexts, show that LLMs are quite monodimensional and larger datasets are needed to understand if LLMs can adequately represent different demographic groups. This can also be translated in the context of facilitation, when LLMs \textit{get triggered} only when toxicity appears in the text, disregarding the encouragement of prosocial behavior.}
+    
+ %    Humans may be the ``best'' classifier since they understand context and social behavior best, but they are not scalable (cite our survey). 
+	% Dimitris can add cost calculations for a hypothetical scenario to drive point home.
 	
 	
 	\subsubsection{Experimental setup}
-	\textbf{Katerina}. Annotation study. We leave experimental details for the appendix, but mention expert annotators, basic procedure, data and setup here. Also talk about positive vs negative reinforcement.
+	% \textbf{Katerina}. Annotation study. We leave experimental details for the appendix, but mention expert annotators, basic procedure, data and setup here. Also talk about positive vs negative reinforcement.
+    \kk{We should an introductory paragraph that summarizes all the method.}
+    \paragraph{Annotator Profile.}
+    \kk{We recruited 10 expert annotators for the task of reinforcement detection and classification. All annotators had extensive experience with NLP annotation tasks. The gender distribution was well balanced, and the annotators’ ages had a median of 25 years. Before the commencement of the annotation process, the annotators completed an agreement form in compliance with GDPR ethical requirements. They were compensated in accordance with Greek legislation. } 
+    
+
+    
+    \paragraph{Annotation Procedure.} 
+    \kk{As described in the previous sections of this article, the goal is to understand \textit{when intervention is needed} as well as \textit{what kind of intervention is needed}. We select a total of 480 random discussions from all datasets (with a uniform distribution) and select a random section with length 6 comments or less from each. Due to the disagreement with regard to a taxonomy of types of interventions (we should refer the reader to a specific point in the text), we opted for examining only on one type of intervention, that is reinforcement. %The task required the annotators to label instances from the PEFK dataset by determining whether, at any point within a specific dialogue `chunk', reinforcement was needed, as well as what kind. 
+    Since reinforcement [annotation] can be a subjective task (point out to a reference), we adopt an ordinal scale approach, where the annotators rate each dialogue for either type of reinforcement (positive or negative), as well as the possibility of no reinforcement using a scale from 1 to 5. The full annotation guidelines can be found in the Appendix [to add the ref]. }
+
+    
 	
 	\subsubsection{Results}
 	\textbf{Katerina}. Inter-annotator agreement and discussion.
@@ -112,13 +144,31 @@
 	
 	\subsubsection{Can LLMs decide when to intervene?}
 	\textbf{Dimitris, Katerina}. No. We show this with two experiments. One is agreement between humans and LLMs on the annotation task (strong baseline). The other is by predicting when a facilitator would speak (weak baseline).
+
+
+    \section{Can we predict when a facilitator would intervene?}
+
+    As discussed in \S\ref{sec:related:interventions}, facilitation interventions can be defined in two ways; whether a comment is facilitative in nature, or whether a dedicated facilitator would participate at a given point in time. So far we have tried to answer the former, which is only achievable through human annotation~\citep{umod}.
+
+    The latter definition may be less useful for analysis, but is much easier to answer (which is one of the reasons most relevant work uses this definition implicitly---\S\ref{sec:related:interventions}). Indeed, considering when a facilitator would speak in our dataset as a ground truth, we can transform the task into a classification problem, where we are looking for the last comment made by a non-facilitator before a facilitator spoke.
+
+    
+    \subsection{Facilitator detection}
+
+
+    \subsection{Facilitator prediction}
+    
 	
 	
 	\section{Conclusion}
 	Humans are good but expensive. Our research is good. We wasted a good amount of money on this, please accept this.
 
 	
-	
+	\section{Limitations}
+    None, we are awesome.
+
+    \section{Ethical Considerations}
+    All experiments and data have passed through official ethical approval by an Ethics Committee, and are compatible with GDPR and the EU AI Act. The annotators signed informed consent forms before beginning annotation and were allowed to skip uncomfortable tasks at any point, with no required justification.
 
 	\bibliography{refs}
 	\clearpage
