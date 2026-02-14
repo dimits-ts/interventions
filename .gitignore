@@ -1,5 +1,6 @@
 logs*/
 checkpoints/
+reinforcement_annotation/
 pefk.csv
 
 # Byte-compiled / optimized / DLL files

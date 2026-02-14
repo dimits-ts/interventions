@@ -66,7 +66,7 @@ def _get_classification_texts(
         target_df=test_df,
         full_df=full_df,
         tokenizer=tokenizer,
-        max_length=max_length,
+        max_length_chars=max_length,
         label_column=label_column,
         max_context_turns=max_context_turns,
     )
