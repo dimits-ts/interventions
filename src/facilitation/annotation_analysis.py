@@ -148,15 +148,9 @@ def get_malformed_ids(dfs: dict[str, pd.DataFrame]) -> set[str]:
     malformed_sets = []
 
     for df in dfs.values():
-        malformed = (
-            df.assign(
-                malformed=df["data_malformation"]
-                .astype(str)
-                .str.strip()
-                .eq("yes")
-            )
-            .loc[lambda x: x["malformed"], "conv_id"]
-        )
+        malformed = df.assign(
+            malformed=df["data_malformation"].astype(str).str.strip().eq("yes")
+        ).loc[lambda x: x["malformed"], "conv_id"]
         malformed_sets.append(set(malformed))
 
     return set.union(*malformed_sets) if malformed_sets else set()
@@ -168,14 +162,54 @@ def remove_malformed_rows(
     cleaned = {}
 
     for name, df in dfs_binary.items():
-        cleaned[name] = (
-            df[~df["conv_id"].isin(malformed_ids)]
-            .reset_index(drop=True)
+        cleaned[name] = df[~df["conv_id"].isin(malformed_ids)].reset_index(
+            drop=True
         )
 
     return cleaned
 
 
+def plot_kappa_heatmap(
+    dfs_binary_cleaned: dict[str, pd.DataFrame],
+    graph_output_dir: Path,
+) -> None:
+    annotators = list(dfs_binary_cleaned.keys())
+    labels = [a.split("_")[0] for a in annotators]
+
+    matrix = pd.DataFrame(index=labels, columns=labels, dtype=float)
+
+    # compute pairwise kappa (averaged across categories)
+    for i, a in enumerate(annotators):
+        for j, b in enumerate(annotators):
+            if i >= j:
+                if i == j:
+                    matrix.iloc[i, j] = float("nan")
+                else:
+                    kappas = [
+                        cohen_kappa_score(
+                            dfs_binary_cleaned[a][col],
+                            dfs_binary_cleaned[b][col],
+                        )
+                        for col in REINFORCE_COLS
+                    ]
+                    matrix.iloc[i, j] = sum(kappas) / len(kappas)
+            else:
+                matrix.iloc[i, j] = float("nan")
+
+    sns.heatmap(
+        matrix,
+        annot=True,
+        vmin=0,
+        vmax=matrix.max().max(),
+        cmap=sns.color_palette("rocket_r", as_cmap=True),
+        square=True,
+        cbar_kws={"label": "Cohen's κ"},
+        mask=matrix.isna(),
+    )
+
+    plt.title("Cohen's κ per annotator pair")
+    graphs.save_plot(graph_output_dir / "kappa_heatmap.png")
+    plt.close()
 
 
 def main(input_dir: Path, graph_output_dir: Path):
@@ -205,11 +239,14 @@ def main(input_dir: Path, graph_output_dir: Path):
     # --- use CLEANED data for analysis ---
     kappas = average_kappa(dfs_binary_cleaned)
 
-    print("\nAverage pairwise Cohen's Kappa (cleaned, binary threshold applied):")
+    print(
+        "\nAverage pairwise Cohen's Kappa (cleaned, binary threshold applied):"
+    )
     for col, value in kappas.items():
         print(f"{col}: {value:.3f}")
 
     plot_annotation_frequency(dfs_binary_cleaned, graph_output_dir)
+    plot_kappa_heatmap(dfs_binary_cleaned, graph_output_dir)
 
 
 if __name__ == "__main__":
