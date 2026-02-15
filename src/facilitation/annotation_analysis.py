@@ -3,7 +3,12 @@ import itertools
 from pathlib import Path
 
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 from sklearn.metrics import cohen_kappa_score
+
+from ..util import graphs
+
 
 REINFORCE_COLS = [
     "positive_reinforcement",
@@ -68,7 +73,36 @@ def average_kappa(dfs_binary: dict[str, pd.DataFrame]) -> dict[str, float]:
     return result
 
 
-def main(input_dir: Path):
+def plot_annotation_frequency(
+    dfs_binary: dict[str, pd.DataFrame], graph_output_dir: Path
+) -> None:
+    # --- count positives per annotator per category ---
+    counts = []
+    for name, df in dfs_binary.items():
+        for col in REINFORCE_COLS:
+            counts.append(
+                {
+                    "annotator": name.split("_")[0], # remove _2
+                    "category": col,
+                    "count": int(
+                        df[col].sum()
+                    ),  # since binary, sum == count >= threshold
+                }
+            )
+
+    counts_df = pd.DataFrame(counts)
+
+    # --- barplot ---
+    sns.barplot(data=counts_df, y="annotator", x="count", hue="category")
+    plt.ylabel("")
+    plt.xlabel("#Annotations")
+    graphs.save_plot(graph_output_dir / "annotation_frequency.png")
+    plt.close()
+
+
+def main(input_dir: Path, graph_output_dir: Path):
+    graphs.seaborn_setup()
+
     files = list(input_dir.rglob("*_2.xlsx"))
     if not files:
         raise ValueError("No matching Excel files found.")
@@ -98,19 +132,22 @@ def main(input_dir: Path):
     print(malformed_ids)
 
     # keep only clean rows
-    human_df = human_df[~human_df["conv_id"].isin(malformed_ids)].reset_index(
-        drop=True
-    )
+    # human_df = human_df[~human_df["conv_id"].isin(malformed_ids)].reset_index(
+    #    drop=True
+    # )
     kappas = average_kappa(dfs_binary)
 
     print("\nAverage pairwise Cohen's Kappa (binary threshold applied):")
     for col, value in kappas.items():
         print(f"{col}: {value:.3f}")
 
+    plot_annotation_frequency(dfs_binary, graph_output_dir)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--input-dir", required=True)
+    parser.add_argument("--graph-output-dir", required=True)
     args = parser.parse_args()
 
-    main(Path(args.input_dir))
+    main(Path(args.input_dir), Path(args.graph_output_dir))
