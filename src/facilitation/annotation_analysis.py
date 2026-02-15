@@ -82,7 +82,7 @@ def plot_annotation_frequency(
         for col in REINFORCE_COLS:
             counts.append(
                 {
-                    "annotator": name.split("_")[0], # remove _2
+                    "annotator": name.split("_")[0],  # remove _2
                     "category": col,
                     "count": int(
                         df[col].sum()
@@ -100,6 +100,84 @@ def plot_annotation_frequency(
     plt.close()
 
 
+def plot_malformation_agreement_histogram(
+    dfs: dict[str, pd.DataFrame], graph_output_dir: Path
+) -> None:
+    records = []
+
+    # --- collect boolean malformation labels ---
+    for annotator, df in dfs.items():
+        tmp = df[["conv_id", "data_malformation"]].copy()
+        tmp["annotator"] = annotator.split("_")[0]
+        tmp["malformed"] = (
+            tmp["data_malformation"].astype(str).str.strip().eq("yes")
+        )
+        records.append(tmp[["conv_id", "annotator", "malformed"]])
+
+    long_df = pd.concat(records, ignore_index=True)
+
+    # --- keep rows where at least one annotator says malformed ---
+    any_malformed = (
+        long_df.groupby("conv_id")["malformed"].any().rename("any_malformed")
+    )
+    long_df = long_df.merge(any_malformed, on="conv_id")
+    long_df = long_df[long_df["any_malformed"]]
+
+    # --- compute agreement per conv_id ---
+    def agreement_rate(group: pd.DataFrame) -> float:
+        majority = group["malformed"].mode().iloc[0]
+        return (group["malformed"] == majority).mean()
+
+    agreement = (
+        long_df.groupby("conv_id")
+        .apply(agreement_rate)
+        .rename("agreement")
+        .reset_index()
+    )
+
+    # --- histogram ---
+    plt.hist(agreement["agreement"] * 100, bins=10)
+    plt.title("Inter-annotator agreement on malformed discussions")
+    plt.ylabel("#Conversations")
+    plt.xlabel("Agreement (%)")
+    graphs.save_plot(graph_output_dir / "malformation_agreement_histogram.png")
+    plt.close()
+
+
+def get_malformed_ids(dfs: dict[str, pd.DataFrame]) -> set[str]:
+    malformed_sets = []
+
+    for df in dfs.values():
+        malformed = (
+            df.assign(
+                malformed=df["data_malformation"]
+                .astype(str)
+                .str.strip()
+                .eq("yes")
+            )
+            .loc[lambda x: x["malformed"], "conv_id"]
+        )
+        malformed_sets.append(set(malformed))
+
+    return set.union(*malformed_sets) if malformed_sets else set()
+
+
+def remove_malformed_rows(
+    dfs_binary: dict[str, pd.DataFrame], malformed_ids: set[str]
+) -> dict[str, pd.DataFrame]:
+    cleaned = {}
+
+    for name, df in dfs_binary.items():
+        cleaned[name] = (
+            df[~df["conv_id"].isin(malformed_ids)]
+            .reset_index(drop=True)
+        )
+
+    return cleaned
+
+
+
+
 def main(input_dir: Path, graph_output_dir: Path):
     graphs.seaborn_setup()
 
@@ -108,40 +186,30 @@ def main(input_dir: Path, graph_output_dir: Path):
         raise ValueError("No matching Excel files found.")
 
     dfs = load_annotations(files)
-    # print([df.data_malformation.unique() for df in dfs.values()])
-    dfs_binary = to_binary(dfs)
-    human_df = pd.concat(
-        [df.assign(annotator=name) for name, df in dfs_binary.items()],
-        ignore_index=True,
-    )
-    # conv_ids where at least one annotator marked malformed
-    malformed_ids = (
-        human_df.groupby("conv_id")["data_malformation"]
-        .apply(lambda s: (s == "yes").any())
-        .loc[lambda s: s]
-        .index
-    )
 
-    # rows to exclude
-    excluded_rows = human_df[human_df["conv_id"].isin(malformed_ids)]
+    # --- malformation agreement plot uses RAW data ---
+    plot_malformation_agreement_histogram(dfs, graph_output_dir)
+
+    # --- binary conversion ---
+    dfs_binary = to_binary(dfs)
+
+    # --- identify malformed rows ---
+    malformed_ids = get_malformed_ids(dfs)
 
     print("\nExcluded malformed rows:")
-    print(excluded_rows)
-    print(f"\nTotal excluded rows: {len(excluded_rows)}")
-    print(f"Unique conv_ids excluded: {len(malformed_ids)}")
-    print(malformed_ids)
+    print(f"Total excluded rows: {len(malformed_ids)}")
 
-    # keep only clean rows
-    # human_df = human_df[~human_df["conv_id"].isin(malformed_ids)].reset_index(
-    #    drop=True
-    # )
-    kappas = average_kappa(dfs_binary)
+    # --- cleaned binary dfs ---
+    dfs_binary_cleaned = remove_malformed_rows(dfs_binary, malformed_ids)
 
-    print("\nAverage pairwise Cohen's Kappa (binary threshold applied):")
+    # --- use CLEANED data for analysis ---
+    kappas = average_kappa(dfs_binary_cleaned)
+
+    print("\nAverage pairwise Cohen's Kappa (cleaned, binary threshold applied):")
     for col, value in kappas.items():
         print(f"{col}: {value:.3f}")
 
-    plot_annotation_frequency(dfs_binary, graph_output_dir)
+    plot_annotation_frequency(dfs_binary_cleaned, graph_output_dir)
 
 
 if __name__ == "__main__":
