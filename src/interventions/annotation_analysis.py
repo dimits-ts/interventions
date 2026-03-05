@@ -19,6 +19,47 @@ REINFORCE_COLS = [
 THRESHOLD = 3
 
 
+def main(
+    human_annotation_dir: Path,
+    llm_annotation_dir: Path,
+    graph_output_dir: Path,
+):
+    graphs.seaborn_setup()
+
+    files = list(human_annotation_dir.rglob("*_2.xlsx"))
+    if not files:
+        raise ValueError("No matching Excel files found.")
+
+    human_dfs = load_human_annotations(files)
+
+    # --- malformation agreement plot uses RAW data ---
+    plot_malformation_agreement_histogram(human_dfs, graph_output_dir)
+
+    # --- binary conversion ---
+    dfs_binary = to_binary(human_dfs)
+
+    # --- identify malformed rows ---
+    malformed_ids = get_malformed_ids(human_dfs)
+
+    print("\nExcluded malformed rows:")
+    print(f"Total excluded rows: {len(malformed_ids)}")
+
+    # --- cleaned binary dfs ---
+    dfs_binary_cleaned = remove_malformed_rows(dfs_binary, malformed_ids)
+
+    # --- use CLEANED data for analysis ---
+    kappas = average_kappa(dfs_binary_cleaned)
+
+    print(
+        "\nAverage pairwise Cohen's Kappa (cleaned, binary threshold applied):"
+    )
+    for col, value in kappas.items():
+        print(f"{col}: {value:.3f}")
+
+    plot_annotation_frequency(dfs_binary_cleaned, graph_output_dir)
+    plot_kappa_heatmap(dfs_binary_cleaned, graph_output_dir)
+
+
 def read_annotation_file(path: Path) -> pd.DataFrame:
     df = pd.read_excel(path)
 
@@ -35,7 +76,7 @@ def read_annotation_file(path: Path) -> pd.DataFrame:
     return df
 
 
-def load_annotations(paths: list[Path]) -> dict[str, pd.DataFrame]:
+def load_human_annotations(paths: list[Path]) -> dict[str, pd.DataFrame]:
     dfs = {p.stem: read_annotation_file(p) for p in paths}
 
     # alignment check
@@ -212,47 +253,15 @@ def plot_kappa_heatmap(
     plt.close()
 
 
-def main(input_dir: Path, graph_output_dir: Path):
-    graphs.seaborn_setup()
-
-    files = list(input_dir.rglob("*_2.xlsx"))
-    if not files:
-        raise ValueError("No matching Excel files found.")
-
-    dfs = load_annotations(files)
-
-    # --- malformation agreement plot uses RAW data ---
-    plot_malformation_agreement_histogram(dfs, graph_output_dir)
-
-    # --- binary conversion ---
-    dfs_binary = to_binary(dfs)
-
-    # --- identify malformed rows ---
-    malformed_ids = get_malformed_ids(dfs)
-
-    print("\nExcluded malformed rows:")
-    print(f"Total excluded rows: {len(malformed_ids)}")
-
-    # --- cleaned binary dfs ---
-    dfs_binary_cleaned = remove_malformed_rows(dfs_binary, malformed_ids)
-
-    # --- use CLEANED data for analysis ---
-    kappas = average_kappa(dfs_binary_cleaned)
-
-    print(
-        "\nAverage pairwise Cohen's Kappa (cleaned, binary threshold applied):"
-    )
-    for col, value in kappas.items():
-        print(f"{col}: {value:.3f}")
-
-    plot_annotation_frequency(dfs_binary_cleaned, graph_output_dir)
-    plot_kappa_heatmap(dfs_binary_cleaned, graph_output_dir)
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input-dir", required=True)
+    parser.add_argument("--human-annotation-dir", required=True)
+    parser.add_argument("--llm-annotation-dir", required=True)
     parser.add_argument("--graph-output-dir", required=True)
     args = parser.parse_args()
 
-    main(Path(args.input_dir), Path(args.graph_output_dir))
+    main(
+        human_annotation_dir=Path(args.human_annotation_dir),
+        llm_annotation_dir=Path(args.llm_annotation_dir),
+        graph_output_dir=Path(args.graph_output_dir),
+    )

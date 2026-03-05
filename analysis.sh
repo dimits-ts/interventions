@@ -1,5 +1,6 @@
 #!/bin/bash
 
 python -m  src.interventions.annotation_analysis \
-    --input-dir ../annotation/interventions/results \ 
+    --human-annotation-dir ../annotation/interventions/results \
+    --llm-annotation-dir data/output \
     --graph-output-dir graphs
