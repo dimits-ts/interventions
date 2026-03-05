@@ -13,7 +13,7 @@ models=(
 pseudos=(
     "olmo32b"
     "qwen32b"
-    "llama3.3-70b"
+    "llama70b"
     "olmo7b"
     "qwen7b"
     "llama8b"

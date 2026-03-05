@@ -33,6 +33,12 @@ def main(
 
     human_dfs = load_human_annotations(files)
 
+    # Build a stable mapping from raw human annotator keys → A1, A2, ...
+    human_alias = {
+        key: f"A{i+1}" for i, key in enumerate(sorted(human_dfs.keys()))
+    }
+    human_dfs = {human_alias[k]: v for k, v in human_dfs.items()}
+
     # --- malformation agreement plot uses RAW human data ---
     plot_malformation_agreement_histogram(human_dfs, graph_output_dir)
 
@@ -161,7 +167,7 @@ def load_llm_annotations(paths: list[Path]) -> dict[str, pd.DataFrame]:
 
     for p in paths:
         # extract filename after "llm_intervention_"
-        name = re.sub(r"^llm_intervention_", "", p.stem)
+        name = re.sub(r"^llm_intervention_", "", p.stem).capitalize()
         dfs[name] = read_llm_annotation_file(p)
 
     return dfs
@@ -191,6 +197,15 @@ def average_kappa(dfs_binary: dict[str, pd.DataFrame]) -> dict[str, float]:
     return result
 
 
+def sort_annotators(names: list[str]) -> list[str]:
+    def key(name: str):
+        if re.match(r"A\d+", name):
+            return (0, int(name[1:]))  # humans first, numeric order
+        return (1, name.lower())  # LLMs next, alphabetical
+
+    return sorted(names, key=key)
+
+
 def plot_annotation_frequency(
     dfs_binary: dict[str, pd.DataFrame], graph_output_dir: Path
 ) -> None:
@@ -200,7 +215,7 @@ def plot_annotation_frequency(
         for col in REINFORCE_COLS:
             counts.append(
                 {
-                    "annotator": name.split("_")[0],  # remove _2
+                    "annotator": name,  # already aliased (A1, A2, ... or LLM name)
                     "category": col,
                     "count": int(
                         df[col].sum()
@@ -210,8 +225,15 @@ def plot_annotation_frequency(
 
     counts_df = pd.DataFrame(counts)
 
-    # --- barplot ---
-    sns.barplot(data=counts_df, y="annotator", x="count", hue="category")
+    order = sort_annotators(counts_df["annotator"].unique().tolist())
+
+    sns.barplot(
+        data=counts_df,
+        y="annotator",
+        x="count",
+        hue="category",
+        order=order,
+    )
     plt.ylabel("")
     plt.xlabel("#Annotations")
     graphs.save_plot(graph_output_dir / "annotation_frequency.png")
@@ -226,7 +248,7 @@ def plot_malformation_agreement_histogram(
     # --- collect boolean malformation labels ---
     for annotator, df in dfs.items():
         tmp = df[["conv_id", "data_malformation"]].copy()
-        tmp["annotator"] = annotator.split("_")[0]
+        tmp["annotator"] = annotator  # already aliased (A1, A2, ...)
         tmp["malformed"] = (
             tmp["data_malformation"].astype(str).str.strip().eq("yes")
         )
@@ -291,8 +313,9 @@ def plot_kappa_heatmap(
     dfs_binary_cleaned: dict[str, pd.DataFrame],
     graph_output_dir: Path,
 ) -> None:
-    annotators = list(dfs_binary_cleaned.keys())
-    labels = [a.split("_")[0] for a in annotators]
+    annotators = sort_annotators(list(dfs_binary_cleaned.keys()))
+    labels = annotators
+    labels = annotators  # already aliased (A1, A2, ... or LLM name)
 
     matrix = pd.DataFrame(index=labels, columns=labels, dtype=float)
 
@@ -318,7 +341,7 @@ def plot_kappa_heatmap(
         matrix,
         annot=True,
         vmin=0,
-        vmax=matrix.max().max(),
+        vmax=1,
         cmap=sns.color_palette("rocket_r", as_cmap=True),
         square=True,
         cbar_kws={"label": "Cohen's κ"},
