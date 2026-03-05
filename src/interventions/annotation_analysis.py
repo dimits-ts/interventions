@@ -19,6 +19,24 @@ REINFORCE_COLS = [
 
 THRESHOLD = 3
 
+HUMAN_COLOR = "#7B2D8B"  # purple
+LLM_COLOR = "#FF6600"  # deep orange
+
+
+def annotator_color(name: str) -> str:
+    """Return the label color for a given annotator name."""
+    return HUMAN_COLOR if re.match(r"A\d+$", name) else LLM_COLOR
+
+
+def apply_annotator_label_colors(ax: plt.Axes, axis: str = "y") -> None:
+    """
+    Color tick labels purple for human annotators (A1, A2, ...)
+    and deep orange for LLMs.
+    """
+    tick_labels = ax.get_yticklabels() if axis == "y" else ax.get_xticklabels()
+    for label in tick_labels:
+        label.set_color(annotator_color(label.get_text()))
+
 
 def main(
     human_annotation_dir: Path,
@@ -225,15 +243,12 @@ def plot_annotation_frequency(
 
     counts_df = pd.DataFrame(counts)
 
+    # --- barplot ---
     order = sort_annotators(counts_df["annotator"].unique().tolist())
-
-    sns.barplot(
-        data=counts_df,
-        y="annotator",
-        x="count",
-        hue="category",
-        order=order,
+    ax = sns.barplot(
+        data=counts_df, y="annotator", x="count", hue="category", order=order
     )
+    apply_annotator_label_colors(ax, axis="y")
     plt.ylabel("")
     plt.xlabel("#Annotations")
     graphs.save_plot(graph_output_dir / "annotation_frequency.png")
@@ -313,9 +328,9 @@ def plot_kappa_heatmap(
     dfs_binary_cleaned: dict[str, pd.DataFrame],
     graph_output_dir: Path,
 ) -> None:
+    plt.figure(figsize=(12, 12))  # roughly double the default size
     annotators = sort_annotators(list(dfs_binary_cleaned.keys()))
     labels = annotators
-    labels = annotators  # already aliased (A1, A2, ... or LLM name)
 
     matrix = pd.DataFrame(index=labels, columns=labels, dtype=float)
 
@@ -337,16 +352,19 @@ def plot_kappa_heatmap(
             else:
                 matrix.iloc[i, j] = float("nan")
 
-    sns.heatmap(
+    ax = sns.heatmap(
         matrix,
         annot=True,
         vmin=0,
         vmax=1,
         cmap=sns.color_palette("rocket_r", as_cmap=True),
         square=True,
+        annot_kws={"size": 10},
         cbar_kws={"label": "Cohen's κ"},
         mask=matrix.isna(),
     )
+    apply_annotator_label_colors(ax, axis="x")
+    apply_annotator_label_colors(ax, axis="y")
 
     plt.title("Cohen's κ per annotator pair")
     graphs.save_plot(graph_output_dir / "kappa_heatmap.png")
