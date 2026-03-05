@@ -1,4 +1,5 @@
 import argparse
+import re
 import itertools
 from pathlib import Path
 
@@ -32,20 +33,26 @@ def main(
 
     human_dfs = load_human_annotations(files)
 
-    # --- malformation agreement plot uses RAW data ---
+    # --- malformation agreement plot uses RAW human data ---
     plot_malformation_agreement_histogram(human_dfs, graph_output_dir)
 
-    # --- binary conversion ---
-    dfs_binary = to_binary(human_dfs)
-
-    # --- identify malformed rows ---
     malformed_ids = get_malformed_ids(human_dfs)
 
     print("\nExcluded malformed rows:")
     print(f"Total excluded rows: {len(malformed_ids)}")
 
+    llm_files = list(llm_annotation_dir.rglob("*.csv"))
+    llm_dfs = load_llm_annotations(llm_files)
+    all_dfs = {**human_dfs, **llm_dfs}
+    all_dfs = align_by_conv_id(all_dfs)
+
+    # merge annotators
+    all_dfs = {**human_dfs, **llm_dfs}
+    dfs_binary = to_binary(all_dfs)
+
     # --- cleaned binary dfs ---
     dfs_binary_cleaned = remove_malformed_rows(dfs_binary, malformed_ids)
+    dfs_binary_cleaned = align_by_conv_id(dfs_binary_cleaned)
 
     # --- use CLEANED data for analysis ---
     kappas = average_kappa(dfs_binary_cleaned)
@@ -86,6 +93,76 @@ def load_human_annotations(paths: list[Path]) -> dict[str, pd.DataFrame]:
     for name, df in dfs.items():
         if not df["conv_id"].equals(ref_ids):
             raise ValueError(f"conv_id mismatch between {ref_name} and {name}")
+
+    return dfs
+
+
+def align_by_conv_id(dfs: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
+    # find common conv_ids across all annotators
+    common_ids = set.intersection(*[set(df["conv_id"]) for df in dfs.values()])
+
+    aligned = {}
+    for name, df in dfs.items():
+        aligned[name] = (
+            df[df["conv_id"].isin(common_ids)]
+            .sort_values("conv_id")
+            .reset_index(drop=True)
+        )
+
+    return aligned
+
+
+def parse_llm_response(text: str) -> dict[str, int]:
+    """
+    Extract reinforcement counts from the LLM output string.
+    Example format:
+
+    Positive: 4
+    Negative: 2
+    No Reinforcement: 1
+    """
+    patterns = {
+        "positive_reinforcement": r"Positive:\s*(\d+)",
+        "negative_reinforcement": r"Negative:\s*(\d+)",
+        "no_reinforcement": r"No Reinforcement:\s*(\d+)",
+    }
+
+    result = {}
+
+    for col, pattern in patterns.items():
+        match = re.search(pattern, text, re.IGNORECASE)
+        result[col] = int(match.group(1)) if match else 0
+
+    return result
+
+
+def read_llm_annotation_file(path: Path) -> pd.DataFrame:
+    df = pd.read_csv(path)
+
+    # parse reinforcement counts
+    parsed = df["response"].apply(parse_llm_response).apply(pd.Series)
+
+    out = pd.concat([df[["conv_id"]], parsed], axis=1)
+
+    # LLMs did not label malformation
+    out["data_malformation"] = "no"
+
+    # match schema of human dfs
+    out = out[["conv_id", "data_malformation"] + REINFORCE_COLS]
+
+    out["conv_id"] = out["conv_id"].astype(str)
+    out = out.sort_values("conv_id").reset_index(drop=True)
+
+    return out
+
+
+def load_llm_annotations(paths: list[Path]) -> dict[str, pd.DataFrame]:
+    dfs = {}
+
+    for p in paths:
+        # extract filename after "llm_intervention_"
+        name = re.sub(r"^llm_intervention_", "", p.stem)
+        dfs[name] = read_llm_annotation_file(p)
 
     return dfs
 
