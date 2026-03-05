@@ -19,15 +19,19 @@ pseudos=(
     "llama8b"
 )
 
-for model_idx in "${!models[@]}"; do
-    MOD_MODEL_URL="${models[$model_idx]}"
-    MOD_MODEL_PSEUDO="${pseudos[$model_idx]}"
-    echo "$MOD_MODEL_PSEUDO"
-    
-    python src/facilitation/llm_inference.py \
-        --input_csv data/input/intervention.csv \
-        --output_csv data/output/llm_intervention_${MOD_MODEL_PSEUDO}.csv \
-        --system_prompt config/interventions/intervention.md \
-        --hf_model_url "$MOD_MODEL_URL" \
-        --hf_model_name "$MOD_MODEL_PSEUDO"
+instruction_filenames=("single_intervention.md" "dual_interventions.md")
+
+for instructions in "${instruction_filenames[@]}"; do
+    for model_idx in "${!models[@]}"; do
+        MOD_MODEL_URL="${models[$model_idx]}"
+        MOD_MODEL_PSEUDO="${pseudos[$model_idx]}"
+        echo "$instructions $MOD_MODEL_PSEUDO"
+        
+        python src/interventions/llm_inference.py \
+            --input_csv data/input/intervention.csv \
+            --output_csv data/output/llm_intervention_${MOD_MODEL_PSEUDO}_${instructions}.csv \
+            --system_prompt data/input/${instructions} \
+            --hf_model_url "$MOD_MODEL_URL" \
+            --hf_model_name "$MOD_MODEL_PSEUDO"
+    done
 done
