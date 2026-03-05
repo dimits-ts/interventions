@@ -34,12 +34,33 @@ SCHEMA_THREE_WAY = AnnotationSchema(
     ],
 )
 
+SCHEMA_ONLY_POSITIVE = AnnotationSchema(
+    name="only_positive",
+    columns=[
+        "positive_reinforcement",
+        "no_reinforcement",
+    ],
+)
+
+SCHEMA_ONLY_NEGATIVE = AnnotationSchema(
+    name="only_negative",
+    columns=[
+        "negative_reinforcement",
+        "no_reinforcement",
+    ],
+)
+
 SCHEMA_BINARY = AnnotationSchema(
     name="binary",
     columns=["reinforcement"],
 )
 
-ALL_SCHEMAS = [SCHEMA_THREE_WAY, SCHEMA_BINARY]
+ALL_SCHEMAS = [
+    SCHEMA_THREE_WAY,
+    SCHEMA_BINARY,
+    SCHEMA_ONLY_POSITIVE,
+    SCHEMA_ONLY_NEGATIVE,
+]
 
 THRESHOLD = 4
 
@@ -168,7 +189,7 @@ def project_to_schema(
     considered reinforced (1) when the sum of positive and negative counts
     meets the threshold, ignoring no_reinforcement.
     """
-    if schema is SCHEMA_THREE_WAY:
+    if schema is not SCHEMA_BINARY:
         return dfs  # already in the right shape
 
     # Binary: positive + negative → single "reinforcement" column
@@ -392,7 +413,7 @@ def run_schema(
     print(f"\n{'='*60}")
     print(f"Schema: {schema.name}  (columns: {schema.columns})")
     print("=" * 60)
-    
+
     # project raw data to this schema, binarise, clean
     projected = project_to_schema(all_dfs_raw, schema)
     binarised = to_binary(projected, schema)
