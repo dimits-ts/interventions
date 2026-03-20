@@ -116,9 +116,40 @@ def read_annotation_file(path: Path) -> pd.DataFrame:
     return df
 
 
+def _annotator_key(path: Path) -> str:
+    """Derive a stable annotator key from a filename.
+
+    Both ``username_2.xlsx`` and ``username_part_2.xlsx`` map to ``username``
+    so that the two files are concatenated into a single annotator DataFrame.
+    """
+    stem = path.stem  # e.g. "wantoatmeal37_2" or "wantoatmeal37_part_2"
+    stem = re.sub(r"_part_2$", "", stem)
+    stem = re.sub(r"_2$", "", stem)
+    return stem
+
+
 def load_human_annotations(paths: list[Path]) -> dict[str, pd.DataFrame]:
-    dfs = {p.stem: read_annotation_file(p) for p in paths}
- 
+    # Group files by annotator key; each annotator may have 1 or 2 files.
+    groups: dict[str, list[Path]] = {}
+    for p in paths:
+        key = _annotator_key(p)
+        groups.setdefault(key, []).append(p)
+
+    dfs: dict[str, pd.DataFrame] = {}
+    for key, file_paths in groups.items():
+        parts = [read_annotation_file(p) for p in sorted(file_paths)]
+        combined = pd.concat(parts, ignore_index=True)
+        # Duplicate conv_ids across the two files would be a data error.
+        dupes = combined["conv_id"][combined["conv_id"].duplicated()].tolist()
+        if dupes:
+            print(
+                f"  [warn] Annotator {key!r} has duplicate conv_ids across "
+                f"files: {dupes[:10]}{'...' if len(dupes) > 10 else ''}. "
+                f"Keeping first occurrence."
+            )
+            combined = combined.drop_duplicates(subset="conv_id", keep="first")
+        dfs[key] = combined.sort_values("conv_id").reset_index(drop=True)
+
     ref_name, ref_df = next(iter(dfs.items()))
     ref_ids = set(ref_df["conv_id"])
     for name, df in dfs.items():
@@ -134,7 +165,7 @@ def load_human_annotations(paths: list[Path]) -> dict[str, pd.DataFrame]:
                 f"{len(only_in_other)} only in {name}. "
                 f"These will be treated as missing annotations."
             )
- 
+
     return dfs
 
 
@@ -510,7 +541,12 @@ def main(
     graphs.seaborn_setup()
 
     # ---- load raw data (always in three-way format) ----
-    files = list(human_annotation_dir.rglob("*part2.xlsx"))
+    # Match both naming conventions: *_part_2.xlsx and *_2.xlsx
+    files = list(human_annotation_dir.rglob("*_part2.xlsx")) + list(
+        human_annotation_dir.rglob("*_2.xlsx")
+    )
+    # Deduplicate in case a path matches both patterns (shouldn't happen, but safe)
+    files = list({p.resolve(): p for p in files}.values())
     if not files:
         raise ValueError("No matching Excel files found.")
 
