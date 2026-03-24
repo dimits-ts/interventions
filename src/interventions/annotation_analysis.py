@@ -116,14 +116,55 @@ def read_annotation_file(path: Path) -> pd.DataFrame:
     return df
 
 
+def _annotator_key(path: Path) -> str:
+    """Derive a stable annotator key from a filename.
+
+    Both ``username_2.xlsx`` and ``username_part_2.xlsx`` map to ``username``
+    so that the two files are concatenated into a single annotator DataFrame.
+    """
+    stem = path.stem  # e.g. "wantoatmeal37_2" or "wantoatmeal37_part_2"
+    stem = re.sub(r"_part_2$", "", stem)
+    stem = re.sub(r"_2$", "", stem)
+    return stem
+
+
 def load_human_annotations(paths: list[Path]) -> dict[str, pd.DataFrame]:
-    dfs = {p.stem: read_annotation_file(p) for p in paths}
+    # Group files by annotator key; each annotator may have 1 or 2 files.
+    groups: dict[str, list[Path]] = {}
+    for p in paths:
+        key = _annotator_key(p)
+        groups.setdefault(key, []).append(p)
+
+    dfs: dict[str, pd.DataFrame] = {}
+    for key, file_paths in groups.items():
+        parts = [read_annotation_file(p) for p in sorted(file_paths)]
+        combined = pd.concat(parts, ignore_index=True)
+        # Duplicate conv_ids across the two files would be a data error.
+        dupes = combined["conv_id"][combined["conv_id"].duplicated()].tolist()
+        if dupes:
+            print(
+                f"  [warn] Annotator {key!r} has duplicate conv_ids across "
+                f"files: {dupes[:10]}{'...' if len(dupes) > 10 else ''}. "
+                f"Keeping first occurrence."
+            )
+            combined = combined.drop_duplicates(subset="conv_id", keep="first")
+        dfs[key] = combined.sort_values("conv_id").reset_index(drop=True)
 
     ref_name, ref_df = next(iter(dfs.items()))
-    ref_ids = ref_df["conv_id"]
+    ref_ids = set(ref_df["conv_id"])
     for name, df in dfs.items():
-        if not df["conv_id"].equals(ref_ids):
-            raise ValueError(f"conv_id mismatch between {ref_name} and {name}")
+        if name == ref_name:
+            continue
+        other_ids = set(df["conv_id"])
+        only_in_ref = ref_ids - other_ids
+        only_in_other = other_ids - ref_ids
+        if only_in_ref or only_in_other:
+            print(
+                f"  [warn] conv_id mismatch between {ref_name} and {name}: "
+                f"{len(only_in_ref)} only in {ref_name}, "
+                f"{len(only_in_other)} only in {name}. "
+                f"These will be treated as missing annotations."
+            )
 
     return dfs
 
@@ -209,15 +250,23 @@ def project_to_schema(
 
 
 def align_by_conv_id(dfs: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
-    common_ids = set.intersection(*[set(df["conv_id"]) for df in dfs.values()])
-    return {
-        name: (
-            df[df["conv_id"].isin(common_ids)]
-            .sort_values("conv_id")
-            .reset_index(drop=True)
-        )
-        for name, df in dfs.items()
-    }
+    """Align all annotators to the union of conv_ids.
+
+    Rows missing for a given annotator are filled with NaN so that downstream
+    pairwise computations can detect and skip them rather than silently
+    dropping conversations that only some annotators covered.
+    """
+    all_ids = sorted(set.union(*[set(df["conv_id"]) for df in dfs.values()]))
+    id_frame = pd.DataFrame({"conv_id": all_ids})
+
+    aligned = {}
+    for name, df in dfs.items():
+        merged = id_frame.merge(df, on="conv_id", how="left")
+        # Restore the sentinel string for data_malformation so existing
+        # logic (str.strip().eq("yes")) still works; NaN rows are "no".
+        merged["data_malformation"] = merged["data_malformation"].fillna("no")
+        aligned[name] = merged.reset_index(drop=True)
+    return aligned
 
 
 def get_malformed_ids(dfs: dict[str, pd.DataFrame]) -> set[str]:
@@ -252,11 +301,20 @@ def to_binary(
     dfs: dict[str, pd.DataFrame],
     schema: AnnotationSchema,
 ) -> dict[str, pd.DataFrame]:
+    """Binarise annotation counts using THRESHOLD.
+
+    NaN values (missing annotations) are preserved as NaN so that pairwise
+    kappa computation can detect and exclude them per pair.
+    """
     out = {}
     for name, df in dfs.items():
         df_bin = df.copy()
         for col in schema.columns:
-            df_bin[col] = (df_bin[col] >= THRESHOLD).astype(int)
+            # Only apply threshold where values are present; keep NaN as NaN.
+            df_bin[col] = df_bin[col].where(
+                df_bin[col].isna(),
+                (df_bin[col] >= THRESHOLD).astype("Int64"),
+            )
         out[name] = df_bin
     return out
 
@@ -264,6 +322,27 @@ def to_binary(
 # ---------------------------------------------------------------------------
 # Analysis
 # ---------------------------------------------------------------------------
+
+
+def _pairwise_kappa(
+    s_a: pd.Series,
+    s_b: pd.Series,
+) -> float | None:
+    """Compute Cohen's kappa for two series, ignoring rows where either is NaN.
+
+    Returns None when fewer than 2 rows are available after dropping NaNs
+    (kappa is undefined in that case).
+    """
+    mask = s_a.notna() & s_b.notna()
+    a, b = s_a[mask].astype(int), s_b[mask].astype(int)
+    if len(a) < 2:
+        return None
+    # cohen_kappa_score requires both classes to appear in at least one array
+    # when only a single class is present the score is undefined (returns 1.0
+    # trivially); we propagate that as None so it is excluded from averages.
+    if len(set(a) | set(b)) < 2:
+        return None
+    return cohen_kappa_score(a, b)
 
 
 def average_kappa(
@@ -274,10 +353,12 @@ def average_kappa(
     result = {}
     for col in schema.columns:
         kappas = [
-            cohen_kappa_score(dfs_binary[a][col], dfs_binary[b][col])
+            k
             for a, b in itertools.combinations(annotators, 2)
+            if (k := _pairwise_kappa(dfs_binary[a][col], dfs_binary[b][col]))
+            is not None
         ]
-        result[col] = sum(kappas) / len(kappas) if kappas else 0.0
+        result[col] = sum(kappas) / len(kappas) if kappas else float("nan")
     return result
 
 
@@ -335,7 +416,8 @@ def plot_annotation_frequency(
         {
             "annotator": name,
             "category": col,
-            "count": int(df[col].sum()),
+            # NaN rows are missing annotations — exclude from count
+            "count": int(df[col].dropna().sum()),
         }
         for name, df in dfs_binary.items()
         for col in schema.columns
@@ -369,13 +451,19 @@ def plot_kappa_heatmap(
         for j, b in enumerate(annotators):
             if i > j:
                 kappas = [
-                    cohen_kappa_score(
-                        dfs_binary_cleaned[a][col],
-                        dfs_binary_cleaned[b][col],
-                    )
+                    k
                     for col in schema.columns
+                    if (
+                        k := _pairwise_kappa(
+                            dfs_binary_cleaned[a][col],
+                            dfs_binary_cleaned[b][col],
+                        )
+                    )
+                    is not None
                 ]
-                matrix.iloc[i, j] = sum(kappas) / len(kappas)
+                matrix.iloc[i, j] = (
+                    sum(kappas) / len(kappas) if kappas else float("nan")
+                )
             else:
                 matrix.iloc[i, j] = float("nan")
 
@@ -420,6 +508,13 @@ def run_schema(
     cleaned = remove_malformed_rows(binarised, malformed_ids)
     cleaned = align_by_conv_id(cleaned)
 
+    # Report coverage so missing annotations are visible
+    all_ids = len(next(iter(cleaned.values())))
+    print("\nAnnotation coverage (non-missing rows):")
+    for name, df in cleaned.items():
+        covered = df[schema.columns[0]].notna().sum()
+        print(f"  {name}: {covered}/{all_ids} ({100*covered/all_ids:.1f}%)")
+
     # kappa summary
     kappas = average_kappa(cleaned, schema)
     print(
@@ -446,7 +541,12 @@ def main(
     graphs.seaborn_setup()
 
     # ---- load raw data (always in three-way format) ----
-    files = list(human_annotation_dir.rglob("*_2.xlsx"))
+    # Match both naming conventions: *_part_2.xlsx and *_2.xlsx
+    files = list(human_annotation_dir.rglob("*_part2.xlsx")) + list(
+        human_annotation_dir.rglob("*_2.xlsx")
+    )
+    # Deduplicate in case a path matches both patterns (shouldn't happen, but safe)
+    files = list({p.resolve(): p for p in files}.values())
     if not files:
         raise ValueError("No matching Excel files found.")
 
