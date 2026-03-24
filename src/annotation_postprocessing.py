@@ -35,7 +35,9 @@ def main(
     malformed_ids = get_malformed_ids(human_dfs)
     print(f"Total malformed rows: {len(malformed_ids)}")
 
-    llm_dfs = load_llm_annotations(list(llm_annotation_dir.rglob("*.csv")))
+    llm_dfs = load_llm_annotations(
+        list(llm_annotation_dir.rglob("*_dual_interventions.md.csv"))
+    )
     all_dfs = align_by_conv_id({**human_dfs, **llm_dfs})
     all_dfs = remove_malformed_rows(all_dfs, malformed_ids)
 
@@ -108,8 +110,12 @@ def build_wide_output(
         "total_malformed",
         merged[malformed_human_cols].mean(axis=1),
     )
-
-    merged = merged.sort_values("conv_id").reset_index(drop=True)
+    merged = merged[~merged.conv_id.duplicated(keep="first")]
+    merged = (
+        merged.sort_values("conv_id")
+        .reset_index(drop=True)
+        .set_index("conv_id")
+    )
     return merged
 
 
@@ -186,7 +192,9 @@ def load_llm_annotations(paths: list[Path]) -> dict[str, pd.DataFrame]:
 def read_annotation_file(path: Path) -> pd.DataFrame:
     df = pd.read_excel(path)
 
-    df = df[["conv_id", "data_malformation"] + ANNOTATION_COLS].copy()
+    df = df[
+        ["conv_id", "discussion", "data_malformation"] + ANNOTATION_COLS
+    ].copy()
     df["conv_id"] = df["conv_id"].astype(str)
     df = df.sort_values("conv_id").reset_index(drop=True)
     df = df.fillna(0)
