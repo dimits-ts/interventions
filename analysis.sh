@@ -1,6 +1,6 @@
 #!/bin/bash
 
-python -m  src.interventions.annotation_analysis \
+python src/annotation_postprocessing.py \
     --human-annotation-dir ../annotation/interventions/results \
-    --llm-annotation-dir data/output \
-    --graph-output-dir graphs
+    --llm-annotation-dir data/llm_output \
+    --output-path data/output/all_annotations.csv

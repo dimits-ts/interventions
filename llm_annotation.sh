@@ -29,7 +29,7 @@ for instructions in "${instruction_filenames[@]}"; do
         
         python src/interventions/llm_inference.py \
             --input_csv data/input/intervention.csv \
-            --output_csv data/output/llm_intervention_${MOD_MODEL_PSEUDO}_${instructions}.csv \
+            --output_csv data/llm_output/llm_intervention_${MOD_MODEL_PSEUDO}_${instructions}.csv \
             --system_prompt data/input/${instructions} \
             --hf_model_url "$MOD_MODEL_URL" \
             --hf_model_name "$MOD_MODEL_PSEUDO"

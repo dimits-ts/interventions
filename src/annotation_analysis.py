@@ -9,8 +9,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.metrics import cohen_kappa_score
 
-from ..util import graphs
-
 
 # ---------------------------------------------------------------------------
 # Schema definitions
