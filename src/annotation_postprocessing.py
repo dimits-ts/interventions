@@ -16,6 +16,7 @@ def main(
     human_annotation_dir: Path,
     llm_annotation_dir: Path,
     output_path: Path,
+    text_file: Path | None,
 ) -> None:
     # Match both naming conventions: *_part_2.xlsx and *_2.xlsx
     files = list(human_annotation_dir.rglob("*_part2.xlsx")) + list(
@@ -44,14 +45,39 @@ def main(
     output_df = build_wide_output(
         all_dfs, human_annotator_names=set(human_dfs.keys())
     )
+
+    if text_file is not None:
+        text_df = load_text_file(text_file)
+        output_df = output_df.merge(text_df, on="conv_id", how="left")
+        column_to_move = output_df.pop("text")
+        output_df.insert(1, "text", column_to_move)
+        output_df = output_df.set_index("conv_id")
+
+        n_missing = output_df["text"].isna().sum()
+        if n_missing:
+            print(f"[warn] {n_missing} conv_ids had no match in the text file.")
+
     print_missing_stats(output_df)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_df.to_csv(output_path, index=False)
+    output_df.to_csv(output_path)
     print(
         f"\nWrote {len(output_df)} rows x {len(output_df.columns)} "
         f"columns -> {output_path}"
     )
+
+
+def load_text_file(path: Path) -> pd.DataFrame:
+    """Load a CSV/TSV with at least conv_id and text columns."""
+    sep = "\t" if path.suffix.lower() == ".tsv" else ","
+    df = pd.read_csv(path, sep=sep, dtype={"conv_id": str})
+    missing = {"conv_id", "text"} - set(df.columns)
+    if missing:
+        raise ValueError(
+            f"Text file {path} is missing required columns: {missing}"
+        )
+    df = df[["conv_id", "text"]].drop_duplicates(subset="conv_id", keep="first")
+    return df
 
 
 def build_wide_output(
@@ -322,10 +348,16 @@ if __name__ == "__main__":
     parser.add_argument("--human-annotation-dir", required=True)
     parser.add_argument("--llm-annotation-dir", required=True)
     parser.add_argument("--output-path", required=True)
+    parser.add_argument(
+        "--text-file",
+        default=None,
+        help="Optional CSV/TSV with 'conv_id' and 'text' columns to merge into the output.",
+    )
     args = parser.parse_args()
 
     main(
         human_annotation_dir=Path(args.human_annotation_dir),
         llm_annotation_dir=Path(args.llm_annotation_dir),
         output_path=Path(args.output_path),
+        text_file=Path(args.text_file) if args.text_file else None,
     )
