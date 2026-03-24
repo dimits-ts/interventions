@@ -8,7 +8,7 @@ from tqdm.auto import tqdm
 
 TEXT_COLUMN = "discussion"
 OUTPUT_COLUMN = "response"
-MAX_LENGTH_CHARS = 5000
+MAX_LENGTH_CHARS = 2000
 
 
 def main(
@@ -34,7 +34,6 @@ def main(
             system_prompt=SYSTEM_PROMPT,
             user_prompt=text,
         )
-        print(res)
         outputs.append(res)
 
     df[OUTPUT_COLUMN] = outputs
