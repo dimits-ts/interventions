@@ -468,3 +468,17 @@ def get_implied_actual_mod_df(
     ).drop_duplicates()
 
     return selected
+
+
+def collate_fn(tokenizer, batch: list[dict[str, str | float]]):
+    texts = [b["text"] for b in batch]
+    labels = torch.tensor([b["label"] for b in batch]).unsqueeze(1)
+
+    enc = tokenizer(
+        texts,
+        padding="longest",
+        truncation=False,
+        return_tensors="pt",
+    )
+    enc["labels"] = labels
+    return enc
