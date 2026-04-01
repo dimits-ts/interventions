@@ -14,7 +14,7 @@ import util.classification
 
 EPOCHS = 80
 MAX_LENGTH_CHARS = 5000
-BATCH_SIZE = 128
+BATCH_SIZE = 64
 EARLY_STOP_WARMUP = 1
 EARLY_STOP_THRESHOLD = 0.001
 EARLY_STOP_PATIENCE = 6
@@ -24,15 +24,16 @@ MODEL = "answerdotai/ModernBERT-large"
 
 
 def main(
+    checkpoint_dir: Path,
     output_dir: Path,
     logs_dir: Path,
     dataset_path: Path,
     dataset_ls: list[str],
     target_label: str,
-):
-
+) -> None:
     print("Selected datasets: ", dataset_ls)
     util.classification.set_seed(util.classification.SEED)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     df = util.io.progress_load_csv(dataset_path)
     df = util.classification.preprocess_dataset(df, dataset_ls)
@@ -40,14 +41,14 @@ def main(
     # (only case where NaNs should exist)
     df = df.dropna(subset=target_label)
 
-    _, val_df, test_df = util.classification.train_validate_test_split(
+    _, _, test_df = util.classification.train_validate_test_split(
         df,
         stratify_col=target_label,
         train_percent=0.8,
         validate_percent=0.1,
     )
 
-    best_model_dir = output_dir / "best_model"
+    best_model_dir = checkpoint_dir / "best_model"
     model = transformers.AutoModelForSequenceClassification.from_pretrained(
         best_model_dir
     )
@@ -55,7 +56,6 @@ def main(
 
     logits, labels = test_model(
         model=model,
-        output_dir=output_dir,
         full_df=df,
         test_df=test_df,
         tokenizer=tokenizer,
@@ -71,7 +71,7 @@ def main(
         label_column=target_label,
     )
     print(res_df)
-    res_path = logs_dir / "res_dataset.csv"
+    res_path = output_dir / "res_dataset.csv"
     res_df.to_csv(res_path)
     print(f"Results per dataset saved to {res_path}.")
 
@@ -79,13 +79,12 @@ def main(
     # as parameters for the next stages
     logits, labels = test_model(
         model=model,
-        output_dir=output_dir,
         full_df=df,
-        test_df=val_df,
+        test_df=test_df,
         tokenizer=tokenizer,
         label_column=target_label,
     )
-    pr_path = logs_dir / "pr_curves.csv"
+    
     pr_df = precision_recall_table_from_logits(
         logits,
         labels,
@@ -94,7 +93,7 @@ def main(
         ],
     )
     print(pr_df)
-    pr_path = logs_dir / "pr_curves.csv"
+    pr_path = output_dir / "pr_curves.csv"
     pr_df.to_csv(pr_path)
     print(f"PR curves saved to {pr_path}.")
 
@@ -102,7 +101,6 @@ def main(
 def test_model(
     model,
     tokenizer: transformers.PreTrainedTokenizerBase,
-    output_dir: Path,
     test_df: pd.DataFrame,
     full_df: pd.DataFrame,
     label_column: str,
@@ -111,13 +109,6 @@ def test_model(
     Single-pass evaluation: runs inference once on the full test set,
     computes per-dataset and overall metrics.
     """
-
-    best_model_dir = output_dir / "best_model"
-    model = transformers.AutoModelForSequenceClassification.from_pretrained(
-        best_model_dir,
-        num_labels=1,
-        problem_type="multi_label_classification",
-    )
 
     # Full test dataset (single pass)
     full_ds = util.classification.DiscussionDataset(
@@ -161,22 +152,24 @@ def precision_recall_table_from_logits(
 def res_df_from_logits_and_labels(
     test_df, logits, labels, label_column: str
 ) -> pd.DataFrame:
-    # attach predictions
     df_eval = test_df.copy()
     df_eval["logit"] = logits
     df_eval["pred"] = (df_eval["logit"] >= 0.5).astype(int)
 
-    # compute per-dataset statistics
     rows = []
     for name, group in df_eval.groupby("dataset"):
-        precision, recall, f1, support = (
+        y_true = group[label_column].astype(int).values  # <-- cast to int
+        y_pred = group["pred"].astype(int).values         # <-- cast to int
+
+        precision, recall, f1, _ = (
             sklearn.metrics.precision_recall_fscore_support(
-                group[label_column],
-                group["pred"],
+                y_true,
+                y_pred,
                 average="binary",
             )
         )
-
+        # count of positive examples, since NaNs invalidate the sum for sklearn
+        support = int(y_true.sum())
         rows.append(
             {
                 "dataset": name,
@@ -225,40 +218,53 @@ def _collect_logits_and_labels(model, dataset, tokenizer):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Dataset selection")
     parser.add_argument(
+        "--checkpoint-dir",
+        type=str,
+        help="Directory of the finetuned model",
+        required=True,
+    )
+    parser.add_argument(
         "--datasets",
         type=str,
         help="Comma-separated list of datasets",
         required=True,
     )
     parser.add_argument(
-        "--dataset_path",
+        "--dataset-path",
         type=str,
         help="The path of the whole dataset",
         required=True,
     )
     parser.add_argument(
-        "--output_dir",
+        "--output-dir",
         type=str,
         help="Output directory for results",
         required=True,
     )
     parser.add_argument(
-        "--logs_dir",
+        "--logs-dir",
         type=str,
         help="Directory for training logs",
         required=True,
     )
     parser.add_argument(
-        "--only_test",
+        "--only-test",
         action=argparse.BooleanOptionalAction,
         default=False,
     )
     parser.add_argument(
-        "--target_label",
+        "--target-label",
         type=str,
         default="is_moderator",
         choices=["is_moderator", "should_intervene"],
         help="Which column to use as the target label",
     )
     args = parser.parse_args()
-    main(output_dir=args.output_dir, logs_dir=args.logs_dir)
+    main(
+        checkpoint_dir=Path(args.checkpoint_dir),
+        output_dir=Path(args.output_dir),
+        logs_dir=Path(args.logs_dir),
+        dataset_path=Path(args.dataset_path),
+        target_label=args.target_label,
+        dataset_ls=args.datasets.split(",")
+    )
