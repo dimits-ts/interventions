@@ -43,7 +43,7 @@ def main(args) -> None:
     output_dir = Path(args.output_dir)
     target_label = args.target_label
 
-    if output_dir.exists() and not any(output_dir.iterdir()):
+    if output_dir.exists() and any(output_dir.iterdir()):
         print(
             f"Output directory {output_dir} already has results,"
             "skipping training."
