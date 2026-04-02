@@ -2,6 +2,7 @@ logs*/
 checkpoints/
 reinforcement_annotation/
 pefk.csv
+all_annotations.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

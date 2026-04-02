@@ -36,14 +36,32 @@ def main(
     malformed_ids = get_malformed_ids(human_dfs)
     print(f"Total malformed rows: {len(malformed_ids)}")
 
+    # ── Dual-intervention LLM annotations (three reinforcement count columns) ──
     llm_dfs = load_llm_annotations(
         list(llm_annotation_dir.rglob("*_dual_interventions.md.csv"))
     )
     all_dfs = align_by_conv_id({**human_dfs, **llm_dfs})
     all_dfs = remove_malformed_rows(all_dfs, malformed_ids)
 
+    # ── Single-intervention LLM annotations (binary yes/no column) ────────────
+    single_dfs = load_llm_single_interventions(
+        list(llm_annotation_dir.rglob("*_single_intervention.md.csv"))
+    )
+    # Align and clean single-intervention data independently
+    if single_dfs:
+        single_dfs_aligned = align_single_interventions(
+            single_dfs, set(all_dfs.values().__iter__().__next__()["conv_id"])
+        )
+        single_dfs_aligned = remove_malformed_rows_single(
+            single_dfs_aligned, malformed_ids
+        )
+    else:
+        single_dfs_aligned = {}
+
     output_df = build_wide_output(
-        all_dfs, human_annotator_names=set(human_dfs.keys())
+        all_dfs,
+        human_annotator_names=set(human_dfs.keys()),
+        single_intervention_dfs=single_dfs_aligned,
     )
 
     if text_file is not None:
@@ -55,7 +73,9 @@ def main(
 
         n_missing = output_df["text"].isna().sum()
         if n_missing:
-            print(f"[warn] {n_missing} conv_ids had no match in the text file.")
+            print(
+                f"[warn] {n_missing} conv_ids had no match in the text file."
+            )
 
     print_missing_stats(output_df)
 
@@ -76,13 +96,16 @@ def load_text_file(path: Path) -> pd.DataFrame:
         raise ValueError(
             f"Text file {path} is missing required columns: {missing}"
         )
-    df = df[["conv_id", "text"]].drop_duplicates(subset="conv_id", keep="first")
+    df = df[["conv_id", "text"]].drop_duplicates(
+        subset="conv_id", keep="first"
+    )
     return df
 
 
 def build_wide_output(
     dfs: dict[str, pd.DataFrame],
     human_annotator_names: set[str],
+    single_intervention_dfs: dict[str, pd.DataFrame] | None = None,
 ) -> pd.DataFrame:
     """
     Merge all annotator DataFrames into a single wide CSV.
@@ -90,14 +113,14 @@ def build_wide_output(
     Output schema:
         conv_id | total_malformed
                 | A1_malformed | A1_positive_reinforcement |
-                A1_negative_reinforcement | A1_no_reinforcement
-                | A2_malformed | A2_positive_reinforcement | ...
+                  A1_negative_reinforcement | A1_no_reinforcement
+                | A2_malformed | ...
                 | Gpt4_malformed | Gpt4_positive_reinforcement | ...
+                | Gpt4_single_response | Claude_single_response | ...
 
-    - ``{annotator}_malformed``: 1 if that annotator flagged the row, 0
-        otherwise.
-    - ``total_malformed``: fraction of *human* annotators who flagged the row
-      (e.g. 0.67 means 2 of 3 human annotators marked it malformed).
+    - ``{annotator}_malformed``: 1 if that annotator flagged the row, 0 otherwise.
+    - ``total_malformed``: fraction of *human* annotators who flagged the row.
+    - ``{model}_single_response``: binary 0/1 from single-intervention LLM files.
     - Each row is one conversation (conv_id).
     - Cells are NaN where an annotator did not cover a conversation.
     """
@@ -107,21 +130,17 @@ def build_wide_output(
     malformed_human_cols: list[str] = []
 
     for annotator, df in dfs.items():
-        # Binary malformed flag for this annotator
         malformed_col = f"{annotator}_malformed"
         subset = df[["conv_id", "data_malformation"] + ANNOTATION_COLS].copy()
         subset[malformed_col] = (
             subset["data_malformation"].astype(str).str.strip().eq("yes")
-        ).astype(
-            float
-        )  # float so NaN propagates for missing rows after merge
+        ).astype(float)
 
         rename_map = {col: f"{annotator}_{col}" for col in ANNOTATION_COLS}
         subset = subset.drop(columns=["data_malformation"]).rename(
             columns=rename_map
         )
 
-        # Column order: malformed flag first, then the three annotation counts
         ordered_cols = ["conv_id", malformed_col] + [
             f"{annotator}_{col}" for col in ANNOTATION_COLS
         ]
@@ -136,6 +155,16 @@ def build_wide_output(
         "total_malformed",
         merged[malformed_human_cols].mean(axis=1),
     )
+
+    # ── Append single-intervention binary columns ──────────────────────────
+    if single_intervention_dfs:
+        for model_name, si_df in single_intervention_dfs.items():
+            col = f"{model_name}_single_response"
+            si_subset = si_df[["conv_id", "single_response"]].rename(
+                columns={"single_response": col}
+            )
+            merged = merged.merge(si_subset, on="conv_id", how="left")
+
     merged = merged[~merged.conv_id.duplicated(keep="first")]
     merged = (
         merged.sort_values("conv_id")
@@ -156,7 +185,6 @@ def load_human_annotations(paths: list[Path]) -> dict[str, pd.DataFrame]:
     for key, file_paths in groups.items():
         parts = [read_annotation_file(p) for p in sorted(file_paths)]
         combined = pd.concat(parts, ignore_index=True)
-        # Duplicate conv_ids across the two files would be a data error.
         dupes = combined["conv_id"][combined["conv_id"].duplicated()].tolist()
         if dupes:
             print(
@@ -208,11 +236,87 @@ def read_llm_annotation_file(path: Path) -> pd.DataFrame:
 
 
 def load_llm_annotations(paths: list[Path]) -> dict[str, pd.DataFrame]:
+    """Load dual-intervention LLM CSVs (three reinforcement count columns)."""
     dfs = {}
     for p in paths:
         name = re.sub(r"^llm_intervention_", "", p.stem).capitalize()
         dfs[name] = read_llm_annotation_file(p)
     return dfs
+
+
+# ── Single-intervention helpers ──────────────────────────────────────────────
+
+
+def read_llm_single_intervention_file(path: Path) -> pd.DataFrame:
+    """Read a *_single_intervention.md.csv file.
+
+    Expected columns: conv_id, response (yes/no).
+    Returns a two-column DataFrame: conv_id, single_response (0.0/1.0).
+    NaN is preserved for rows that could not be parsed.
+    """
+    df = pd.read_csv(path)
+    missing = {"conv_id", "response"} - set(df.columns)
+    if missing:
+        raise ValueError(
+            f"Single-intervention file {path} is missing columns: {missing}"
+        )
+    out = df[["conv_id"]].copy()
+    out["conv_id"] = out["conv_id"].astype(str)
+    normalised = df["response"].astype(str).str.strip().str.lower()
+    out["single_response"] = normalised.map({"yes": 1.0, "no": 0.0})
+    n_unparsed = out["single_response"].isna().sum()
+    if n_unparsed:
+        print(
+            f"  [warn] {path.name}: {n_unparsed} rows had an unrecognised "
+            f"response value and were set to NaN."
+        )
+    return out.sort_values("conv_id").reset_index(drop=True)
+
+
+def load_llm_single_interventions(
+    paths: list[Path],
+) -> dict[str, pd.DataFrame]:
+    """Return {model_name: single_response_df} for every single-intervention CSV."""
+    dfs = {}
+    for p in paths:
+        # Strip _single_intervention(.md) suffix, then the llm_intervention_ prefix
+        stem = re.sub(
+            r"_single_intervention(?:\.md)?$", "", p.stem, flags=re.IGNORECASE
+        )
+        name = re.sub(r"^llm_intervention_", "", stem).capitalize()
+        dfs[name] = read_llm_single_intervention_file(p)
+    return dfs
+
+
+def align_single_interventions(
+    single_dfs: dict[str, pd.DataFrame],
+    reference_conv_ids: set[str],
+) -> dict[str, pd.DataFrame]:
+    """Align single-intervention DataFrames to the reference conv_id universe.
+
+    Conversations present in the reference set but absent from a model's file
+    are filled with NaN so missingness is explicit in the final output.
+    """
+    id_frame = pd.DataFrame({"conv_id": sorted(reference_conv_ids)})
+    aligned = {}
+    for name, df in single_dfs.items():
+        merged = id_frame.merge(df, on="conv_id", how="left")
+        aligned[name] = merged.reset_index(drop=True)
+    return aligned
+
+
+def remove_malformed_rows_single(
+    single_dfs: dict[str, pd.DataFrame],
+    malformed_ids: set[str],
+) -> dict[str, pd.DataFrame]:
+    """Drop malformed conv_ids from single-intervention DataFrames."""
+    return {
+        name: df[~df["conv_id"].isin(malformed_ids)].reset_index(drop=True)
+        for name, df in single_dfs.items()
+    }
+
+
+# ── Shared helpers ───────────────────────────────────────────────────────────
 
 
 def read_annotation_file(path: Path) -> pd.DataFrame:
@@ -256,8 +360,6 @@ def align_by_conv_id(dfs: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
     aligned = {}
     for name, df in dfs.items():
         merged = id_frame.merge(df, on="conv_id", how="left")
-        # Restore the sentinel string for data_malformation so existing
-        # logic (str.strip().eq("yes")) still works; NaN rows are "no".
         merged["data_malformation"] = merged["data_malformation"].fillna("no")
         aligned[name] = merged.reset_index(drop=True)
     return aligned
@@ -323,6 +425,19 @@ def print_missing_stats(df: pd.DataFrame) -> None:
         print(
             f"  {ann}: {n - n_missing} / {n} conversations covered ({n_missing} missing, {n_missing/n:.1%})"
         )
+
+    # ── Single-intervention coverage ─────────────────────────────────────────
+    single_cols = [c for c in df.columns if c.endswith("_single_response")]
+    if single_cols:
+        print(
+            "\n── Single-intervention coverage ───────────────────────────────────"
+        )
+        for col in single_cols:
+            n_missing = df[col].isna().sum()
+            print(
+                f"  {col}: {n - n_missing} / {n} conversations covered "
+                f"({n_missing} missing, {n_missing/n:.1%})"
+            )
 
     # ── Coverage count distribution ──────────────────────────────────────────
     print(
