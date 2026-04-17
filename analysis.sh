@@ -8,4 +8,5 @@ python src/annotation_postprocessing.py \
 
 python src/trans_analysis.py \
     --input-dir data/trans_results \
-    --graph-dir graphs
+    --graph-dir graphs \
+    --tables-dir manuscript/generated

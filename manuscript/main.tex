@@ -170,7 +170,7 @@ No-Reinforcement  & 0.32           & 0.46           & 0.20                 \\
 
     \begin{figure}[!t]
         \centering
-        \includegraphics[width=\linewidth]{graphs/pairwise_kappa_heatmap.pdf}
+        \includegraphics[width=\linewidth]{pairwise_kappa_heatmap.pdf}
         \caption{Heatmap of pairwise Cohen's $\kappa$ scores.}
         \label{fig:kapp_heatmap}
     \end{figure}
@@ -178,7 +178,7 @@ No-Reinforcement  & 0.32           & 0.46           & 0.20                 \\
 
     \begin{figure}[!t]
         \centering
-        \includegraphics[width=\linewidth]{graphs/how_intervene.png}
+        \includegraphics[width=\linewidth]{how_intervene.png}
         \caption{Type of reinforcement the human and LLM annotators choose to intervene with.}
         \label{fig:how_intervene}
     \end{figure}
@@ -186,7 +186,7 @@ No-Reinforcement  & 0.32           & 0.46           & 0.20                 \\
 
     \begin{figure}[!t]
         \centering
-        \includegraphics[width=\linewidth]{graphs/when_intervene.png}
+        \includegraphics[width=\linewidth]{when_intervene.png}
         \caption{Frequencies of human and LLM annotator interventions.}
         \label{fig:when_intervene}
     \end{figure}
@@ -215,10 +215,15 @@ The models on the other hand, are more consistent, with overall higher intervent
     The latter definition may be less useful for analysis, but is much easier to answer (which is one of the reasons most relevant work uses this definition implicitly---\S\ref{sec:related:interventions}). Indeed, considering when a facilitator would speak in our dataset as a ground truth, we can transform the task into a classification problem, where we are looking for the last comment made by a non-facilitator before a facilitator spoke.
 
     
-    \subsection{Facilitator detection}
+    %\subsection{Facilitator detection}
+%TODO: Add this to appendix
 
-
-    \subsection{Facilitator prediction}
+    \subsection{Title}
+    
+    \input{generated/all.tex}
+    \input{generated/written.tex}
+    \input{generated/spoken.tex}
+    
     
 	
 	
