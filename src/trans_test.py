@@ -13,8 +13,8 @@ import util.classification
 
 
 EPOCHS = 80
-MAX_LENGTH_CHARS = 5000
-BATCH_SIZE = 128
+MAX_LENGTH_CHARS = 4000
+BATCH_SIZE = 64
 EARLY_STOP_WARMUP = 1
 EARLY_STOP_THRESHOLD = 0.001
 EARLY_STOP_PATIENCE = 6
@@ -26,7 +26,6 @@ MODEL = "answerdotai/ModernBERT-large"
 def main(
     checkpoint_dir: Path,
     output_dir: Path,
-    logs_dir: Path,
     dataset_path: Path,
     dataset_ls: list[str],
     target_label: str,
@@ -242,12 +241,6 @@ if __name__ == "__main__":
         required=True,
     )
     parser.add_argument(
-        "--logs-dir",
-        type=str,
-        help="Directory for training logs",
-        required=True,
-    )
-    parser.add_argument(
         "--only-test",
         action=argparse.BooleanOptionalAction,
         default=False,
@@ -263,7 +256,6 @@ if __name__ == "__main__":
     main(
         checkpoint_dir=Path(args.checkpoint_dir),
         output_dir=Path(args.output_dir),
-        logs_dir=Path(args.logs_dir),
         dataset_path=Path(args.dataset_path),
         target_label=args.target_label,
         dataset_ls=args.datasets.split(",")
