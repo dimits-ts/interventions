@@ -5,3 +5,7 @@ python src/annotation_postprocessing.py \
     --llm-annotation-dir data/llm_output \
     --output-path data/output/all_annotations.csv \
     --text-file pefk.csv
+
+python src/trans_analysis.py \
+    --input-dir data/trans_results \
+    --graph-dir graphs
