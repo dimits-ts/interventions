@@ -82,7 +82,7 @@ def moderation_plot(df: pd.DataFrame, graph_dir: Path) -> float:
         y="dataset",
         x="moderator_percent",
         color="black",
-        order=order,
+        order=order
     )
     plt.ylabel("Dataset")
     plt.xlabel("Overall ratio (%) of facilitator comments")
@@ -112,6 +112,7 @@ def comments_per_discussion_plot(df: pd.DataFrame, graph_dir: Path) -> None:
         stat="density",
         common_norm=False,
         bins=40,  # do NOT let this go to auto
+        hue_order=sorted(df["dataset"].unique())
     )
     ax.set_xticks([0, 100, 200, 300, 400, 500])
     ax.set_xticklabels(["0", "100", "200", "300", "400", "500+"])
@@ -147,6 +148,7 @@ def words_per_comment_plot(df: pd.DataFrame, graph_dir: Path) -> None:
         bins=50,  # do NOT let this go to auto
         stat="density",
         common_norm=False,
+        hue_order=sorted(df["dataset"].unique())
     )
     ax.set_xticks([0, 100, 200, 300, 400, 500])
     ax.set_xticklabels(["0", "100", "200", "300", "400", "500+"])

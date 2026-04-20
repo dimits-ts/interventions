@@ -28,17 +28,19 @@ def main(input_dir: Path, graph_dir: Path, tables_dir: Path):
 def plot_metrics(df):
     # Convert to long format for easier plotting
     df_long = df.melt(
-        id_vars="threshold",
-        value_vars=["precision", "recall", "f1"],
+        id_vars="Threshold",
+        value_vars=["Precision", "Recall", "F1"],
         var_name="metric",
         value_name="value",
     )
 
     # Plot
-    sns.lineplot(data=df_long, x="threshold", y="value", hue="metric")
+    ax = sns.lineplot(data=df_long, x="Threshold", y="value", hue="metric")
+    legend = ax.get_legend()
+    if legend is not None:
+        legend.set_title(None)
     plt.xlabel("Threshold")
     plt.ylabel("Score")
-    plt.title("Precision, Recall, F1 vs Threshold")
 
 
 def export_results(

@@ -43,8 +43,8 @@ def main(
     _, _, test_df = util.classification.train_validate_test_split(
         df,
         stratify_col=target_label,
-        train_percent=0.8,
-        validate_percent=0.1,
+        train_percent=0.6,
+        validate_percent=0.2,
     )
 
     best_model_dir = checkpoint_dir / "best_model"
@@ -87,8 +87,9 @@ def main(
     pr_df = precision_recall_table_from_logits(
         logits,
         labels,
+        # remove the threshold>=1 since it is meaningless
         thresholds=[
-            round(t, 2) for t in list(torch.linspace(0.0, 1.0, 21).numpy())
+            round(t, 2) for t in list(torch.linspace(0.0, 1.0, 20).numpy())
         ],
     )
     print(pr_df)
@@ -139,10 +140,10 @@ def precision_recall_table_from_logits(
         )
         data.append(
             {
-                "threshold": t,
-                "precision": precision,
-                "recall": recall,
-                "f1": f1,
+                "Threshold": t,
+                "Precision": precision,
+                "Recall": recall,
+                "F1": f1,
             }
         )
     return pd.DataFrame(data).round(4)
@@ -171,15 +172,15 @@ def res_df_from_logits_and_labels(
         support = int(y_true.sum())
         rows.append(
             {
-                "dataset": name,
-                "precision": precision,
-                "recall": recall,
-                "f1": f1,
-                "support": support,
+                "Dataset": name,
+                "Precision": precision,
+                "Recall": recall,
+                "F1": f1,
+                "Support": support,
             }
         )
 
-    return pd.DataFrame(rows).set_index("dataset")
+    return pd.DataFrame(rows).set_index("Dataset")
 
 
 def _collect_logits_and_labels(model, dataset, tokenizer):
