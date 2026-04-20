@@ -45,7 +45,7 @@ def main(args):
             "wikidisputes": "WikiDisputes",
             "wikiconv": "WikiConv",
             "fora": "Fora",
-            "umod": "UMod",
+            "umod": "UMOD",
             "wikitactics": "WikiTactics",
             "whow": "WHoW",
             "iq2": "IQ2",
@@ -53,54 +53,12 @@ def main(args):
         }
     )
 
-    print(f"Dataset total size: {convert_bytes(csv_path.stat().st_size)}")
-
     words_per_comment_plot(df, graph_dir)
     comments_per_discussion_plot(df, graph_dir)
-    moderation_plot(df[df.dataset != "UMod"], graph_dir=graph_dir)
-
-
-def convert_bytes(num):
-    """
-    this function will convert bytes to MB.... GB... etc
-    """
-    for x in ["bytes", "KB", "MB", "GB", "TB"]:
-        if num < 1024.0:
-            return "%3.1f %s" % (num, x)
-        num /= 1024.0
-
-
-def comments_per_discussion_plot(df: pd.DataFrame, graph_dir: Path) -> None:
-    disc_sizes = (
-        df.groupby(["dataset", "conv_id"])
-        .size()
-        .reset_index(name="comments_per_disc")
+    moderation_plot(
+        df[(df.dataset != "UMOD") & (df.dataset != "WikiDisputes")],
+        graph_dir=graph_dir,
     )
-
-    # Cap at 2MAX_COMMENT_LEN_CHARS because there is a
-    # tail going up to 1200 comments
-    disc_sizes["comments_per_disc"] = disc_sizes["comments_per_disc"].clip(
-        upper=MAX_COMMENTS_PER_DISCUSSION
-    )
-
-    plt.figure(figsize=(8, 5))
-    sns.histplot(
-        data=disc_sizes,
-        x="comments_per_disc",
-        hue="dataset",
-        stat="density",
-        common_norm=False,
-        bins=40,  # do NOT let this go to auto
-    )
-    plt.title("Distribution of Comments per Discussion (Density)")
-    plt.xlabel(
-        "Number of Comments per Discussion "
-        f"(capped at {MAX_COMMENTS_PER_DISCUSSION})"
-    )
-    plt.ylabel("Density")
-    plt.tight_layout()
-
-    util.graphs.save_plot(graph_dir / "analysis_comments_per_discussion.png")
 
 
 def moderation_plot(df: pd.DataFrame, graph_dir: Path) -> float:
@@ -126,12 +84,47 @@ def moderation_plot(df: pd.DataFrame, graph_dir: Path) -> float:
         color="black",
         order=order,
     )
-    plt.title("Percentage of Moderator Comments per Dataset")
     plt.ylabel("Dataset")
-    plt.xlabel("Percentage (%)")
+    plt.xlabel("Overall ratio (%) of facilitator comments")
     plt.tight_layout()
 
     util.graphs.save_plot(graph_dir / "analysis_moderation_perc.png")
+
+
+def comments_per_discussion_plot(df: pd.DataFrame, graph_dir: Path) -> None:
+    disc_sizes = (
+        df.groupby(["dataset", "conv_id"])
+        .size()
+        .reset_index(name="comments_per_disc")
+    )
+
+    # Cap at 2MAX_COMMENT_LEN_CHARS because there is a
+    # tail going up to 1200 comments
+    disc_sizes["comments_per_disc"] = disc_sizes["comments_per_disc"].clip(
+        upper=MAX_COMMENTS_PER_DISCUSSION
+    )
+
+    plt.figure(figsize=(8, 5))
+    ax = sns.histplot(
+        data=disc_sizes,
+        x="comments_per_disc",
+        hue="dataset",
+        stat="density",
+        common_norm=False,
+        bins=40,  # do NOT let this go to auto
+    )
+    ax.set_xticks([0, 100, 200, 300, 400, 500])
+    ax.set_xticklabels(["0", "100", "200", "300", "400", "500+"])
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    legend = ax.get_legend()
+    if legend is not None:
+        legend.set_title(None)
+    plt.xlabel("#Comments/Discussion ")
+    plt.ylabel("Density")
+    plt.tight_layout()
+
+    util.graphs.save_plot(graph_dir / "analysis_comments_per_discussion.png")
 
 
 def words_per_comment_plot(df: pd.DataFrame, graph_dir: Path) -> None:
@@ -142,10 +135,12 @@ def words_per_comment_plot(df: pd.DataFrame, graph_dir: Path) -> None:
     )
 
     # Cap long tail (optional but very useful for readability)
-    df["words_per_comment"] = df["words_per_comment"].clip(upper=MAX_CHARACTERS_PER_COMMENT)
+    df["words_per_comment"] = df["words_per_comment"].clip(
+        upper=MAX_CHARACTERS_PER_COMMENT
+    )
 
     plt.figure(figsize=(8, 5))
-    sns.histplot(
+    ax = sns.histplot(
         data=df,
         x="words_per_comment",
         hue="dataset",
@@ -153,8 +148,14 @@ def words_per_comment_plot(df: pd.DataFrame, graph_dir: Path) -> None:
         stat="density",
         common_norm=False,
     )
-    plt.title("Distribution of Words per Comment (Density)")
-    plt.xlabel(F"Words per Comment (capped at {MAX_CHARACTERS_PER_COMMENT})")
+    ax.set_xticks([0, 100, 200, 300, 400, 500])
+    ax.set_xticklabels(["0", "100", "200", "300", "400", "500+"])
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    legend = ax.get_legend()
+    if legend is not None:
+        legend.set_title(None)
+    plt.xlabel("#Words per Comment")
     plt.ylabel("Density")
     plt.tight_layout()
 
