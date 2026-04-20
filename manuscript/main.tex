@@ -23,9 +23,8 @@
 \usepackage{booktabs}
 \usepackage{amssymb}
 \usepackage{acronym}
-
-
 \usepackage{xcolor}
+
 \newcommand{\kk}[1]{\textcolor{magenta}{#1}}
 \newcommand{\dt}[1]{\textcolor{darkblue}{#1}}
 
@@ -49,7 +48,7 @@
 
 	\begin{figure}[ht]
 		\includegraphics[width=\columnwidth]{intro.drawio.png}
-		\caption{At any point in a discussion, the facilitator must decide whether to intervene or not. Not intervening when the situation calls for it may lead to escalation and derailment. On the other hand, intervening when the discussion is already going well, may lead to irritation and toxicity from participants.}
+		\caption{At any point in a discussion, the facilitator must decide whether to intervene or not. Not intervening when the situation calls for it may lead to the discussion worsening (e.g., topic derailment, escalation, missed participation). On the other hand, intervening when the discussion is already going well may lead to irritation among participants.}
 		\label{fig:intro}
 	\end{figure}
 	
@@ -115,7 +114,7 @@
 	\subsection{Spoken vs online facilitation}
 	\label{sec:related:spoken-vs-written}
 	
-	There currently exists a rift in facilitation research; while some previous work concerns itself with forums and online discussions~\citep{ceri}, others are exclusively focused on live, real-life, oral discussions.~\citep{schroeder-etal-2024-fora, chen-etal-2025-whow}. The presence of these two sub-modalities necessitates separate experiments for either of them, since they represent different kinds of data. Posts and comments for instance are self-contained, while transcripts regularly feature interruptions, participants talking in parallel, and linguistic features that are necessary for coordination. They may also feature fundamentally different kinds of facilitation interventions, as hinted by stark differences in proposed facilitation schemas between online forums~\citep{ceri}, and real-life discussions~\citep{schroeder-etal-2024-fora, chen-etal-2025-whow}. \dt{It is worth noting that in our case, all written discussions are asynchronous (the participants may join and leave at any time), while all spoken discussions are synchronous (the participants are all active at the same time).}
+	\dt{There currently exists a rift in facilitation research; while some previous work concerns itself with forums and online discussions~\citep{ceri}, others are exclusively focused on live, real-life, oral discussions.~\citep{schroeder-etal-2024-fora, chen-etal-2025-whow}. The presence of these two sub-modalities necessitates separate experiments for either of them, since they represent different kinds of data. Posts and comments for instance are self-contained, while transcripts regularly feature interruptions, participants talking in parallel (see App.~\ref{app:dataset:stats}), and linguistic features that are necessary for coordination (such as the \texttt{dash} character used for signaling an interruption). They may also feature fundamentally different kinds of facilitation interventions, as hinted by stark differences in proposed facilitation schemas between online forums~\citep{ceri}, and real-life discussions~\citep{schroeder-etal-2024-fora, chen-etal-2025-whow}. It is worth noting that in our case, all written discussions are asynchronous (the participants may join and leave at any time), while all spoken discussions are synchronous (the participants are all active at the same time).}
 	
 	
 	\subsection{Facilitation detection}
@@ -153,9 +152,7 @@
 	
 	\subsection{Description}
 	
-	\citet{korre-etal-2025-evaluation} provide a list of datasets relating to discussion facilitation. We combine all of these datasets (Table~\ref{tab:datasets}), preprocess them (\S\ref{app:dataset:preprocessing}) and  (\S\ref{app:dataset:schema}). Relevant statistics can be found in~. 
-	
-	\dt{We thus create a multi-domain dataset focused around facilitation, called the ``\ac{pefk}'' dataset. \ac{pefk} is the first dataset to compile information on facilitative interventions from both the domain of online forums, and spoken discussions of various domains (debates, radio, and deliberative discussions). Furthermore, \ac{pefk} standardizes the discussion contents, metadata, metrics, and labeling schemes according to a simple, unified schema, making it suitable as a benchmarking dataset on facilitator interventions.\footnote{Specifically, interventions following the assumption of professional facilitators (Definition~\ref{def:facilitator}). Due to the extremely large size of the dataset (\S\ref{app:dataset:stats}), following human judgment to mark facilitative comments (Definition~\ref{def:facilitative}) would be prohibitively expensive.}}
+	\dt{\citet{korre-etal-2025-evaluation} provide a list of datasets relating to discussion facilitation which we combine to create a multi-domain dataset focused around facilitation, called the ``\ac{pefk}'' dataset  (Table~\ref{tab:datasets}). \ac{pefk} is the first dataset to compile information on facilitative interventions from both the domain of online forums, and spoken (debates, radio, and deliberative) discussions. Furthermore, our dataset standardizes discussion content, metadata, metrics, and labeling schemes according to a simple, unified schema, making it suitable as a benchmark on facilitator interventions.\footnote{Specifically, interventions following the assumption of professional facilitators (Definition~\ref{def:facilitator}). Due to the extremely large size of the dataset, following human judgment to mark facilitative comments (Definition~\ref{def:facilitative}) would be prohibitively expensive.}} See App.~\ref{app:dataset} for more information on preprocessing and the schema used.
 	%Unlike its predecessors, \ac{pefk} is large in size and rich in comment-level information, allowing us to run thorough analysis between similar datasets.
 	
 	
@@ -171,18 +168,18 @@
 	
 	\begin{figure}[t]
 		\includegraphics[width=\columnwidth]{analysis_moderation_perc.png}
-		\caption{Percentage of moderated comments for each of the sub-datasets of \ac{pefk}. Despite the different kinds of facilitators in online platforms and various real-life-discussion domains, the overall rate of facilitation remains similar.}
+		\caption{Percentage of moderated comments for each of the sub-datasets of \ac{pefk}. Despite the different kinds of facilitators in online platforms and various real-life-discussion domains, the overall rate of facilitation remains similar across datasets.}
 		\label{fig:moderation-perc}
 	\end{figure}
 	
-	Figure~\ref{fig:moderation-perc} shows the percentage of comments made by facilitators for each of our datasets. In almost all datasets, a third of the comments are made by facilitators. We do not include the UMOD dataset, since its percentage is based on our own thresholding (see~\ref{app:dataset:preprocessing}).
+	Figure~\ref{fig:moderation-perc} shows the percentage of comments made by facilitators for each of our datasets. In almost all datasets, a third of the comments are made by facilitators.\footnote{We do not include the UMOD dataset, since its percentage is based on our own thresholding (see~\ref{app:dataset:preprocessing}).}
 	
 	
 	\section{Predicting facilitator comments}
 	
-	As discussed in \S\ref{sec:related:interventions}, facilitation interventions can be defined in two ways; whether a comment is facilitative in nature, or whether a dedicated facilitator would participate at a given point in time. So far we have tried to answer the former, which is only achievable through human annotation~\citep{umod}.
+	%As discussed in \S\ref{sec:related:interventions}, facilitation interventions can be defined in two ways; whether a comment is facilitative in nature, or whether a dedicated facilitator would participate at a given point in time. So far we have tried to answer the former, which is only achievable through human annotation~\citep{umod}.
 	
-	The latter definition may be less useful for analysis, but is much easier to answer (which is one of the reasons most relevant work uses this definition implicitly--\S\ref{sec:related:interventions}). Indeed, considering when a facilitator would speak in our dataset as a ground truth, we can transform the task into a classification problem, where we are looking for the last comment made by a non-facilitator before a facilitator spoke.
+	%The latter definition may be less useful for analysis, but is much easier to answer (which is one of the reasons most relevant work uses this definition implicitly--see \S\ref{sec:related:interventions}). Indeed, considering when a facilitator would speak in our dataset as a ground truth, we can transform the task into a classification problem, where we are looking for the last comment made by a non-facilitator before a facilitator spoke.
 	
 	
 	%\subsection{Facilitator detection}
@@ -190,13 +187,15 @@
 	
 	
 	\input{generated/all.tex}
-	\input{generated/written.tex}
-	\input{generated/spoken.tex}
+	%\input{generated/written.tex}
+	%\input{generated/spoken.tex}
 	
 	
 	
 	
 	\section{Seeking facilitative comments}
+	
+	\subsection{Why use humans?}
 	
 	\paragraph{Merits.}\kk{\citet{korre-etal-2025-evaluation} state that a fully-automated facilitation is still out of our reach as LLMs tend to be very intruding and repetitive, and fixate on the moderation side of facilitation. Human facilitators, on the other hand, can step in the conversation with a more empathetic outlook, take into deep consideration the context of the conversation, while also being more sensitive to the differences and causes of certain social behaviors.}
 	
@@ -282,7 +281,7 @@
 	Apart from some \textit{negligible} exceptions, human annotators very cautious when it comes to intervening, with most often selecting to not intervene (no reinforcement). When it comes to whether they choose positive or negative reinforcement, the discrepancy is not that great, with positive reinforcement being selected slightly more often. However, it must be noted (we need to connect this with the previous results), that despite the slightly higher frequency of positive reinforcement, they agree more on where intervene with negative reinforcement.
 	
 	
-	\subsection{Using LLM annotators}
+	\subsection{Could we use LLMs instead of annotators?}
 	
 	The models on the other hand, are more consistent, with overall higher intervention frequency than you humans (we need to connect this with the fact that models very often become too intrusive). Also, they are more liberal with the intervention types, with the most frequent one being the positive reinforcement, and last on the no-reinforcement. We see an almost \textit{oppositve} behaviour.
 	
@@ -314,7 +313,9 @@
 		\acro{dl}[DL]{Deep Learning}
 	\end{acronym}
 	
+	
 	\section{Dataset details}
+	\label{app:dataset}
 	
 	\subsection{Preprocessing}
 	\label{app:dataset:preprocessing}
@@ -392,11 +393,11 @@
 			text & string & The contents of the comment \\
 			dataset & string & The dataset from which this comment originated from \\
 			notes & JSON & A dictionary holding notable dataset-specific information \\
-			toxicity & float & The ``toxicity'' score given to the comment by the Perspective API \\
-			severe\_toxicity & float & The ``severe toxicity'' score given to the comment by the Perspective API \\
+			toxicity & float & The ``toxicity'' score given to the comment by the \citet{google_perspective_api} \\
+			severe\_toxicity & float & The ``severe toxicity'' score given to the comment by the \citet{google_perspective_api} \\
 			\bottomrule
 		\end{tabular}
-		\caption{The full set of columns used for each comment in the PEFK dataset.}
+		\caption{The full set of columns used for each comment in the \ac{pefk} dataset.}
 		\label{tab:dataset-columns}
 	\end{table*}
 	
@@ -406,17 +407,17 @@
 	
 	\begin{figure}[t]
 		\includegraphics[width=\columnwidth]{analysis_comments_per_discussion.png}
-		\caption{Comments per discussion on the PEFK dataset. Discussions over 40 comments have been clipped at the end of the x-axis for the purposes of graph readability.}
+		\caption{Comments per discussion on the \ac{pefk} dataset. Note the significant increase in comments made in transcribed datasets such as Fora and IQ2. This deviation is explained by the fact that a single human utterance is regularly broken up to many comments in order to simulate interruptions or participants talking over each other.}
 		\label{fig:comments-per-discussion}
 	\end{figure}
 	
 	\begin{figure}[t]
 		\includegraphics[width=\columnwidth]{analysis_words_per_comment.png}
-		\caption{Words per comment on the PEFK dataset. Comments with 500 words have been clipped at the end of the x-axis for the purposes of graph readability.}
+		\caption{Number of words per comment in all discussions on the \ac{pefk} dataset, grouped by original dataset. Comments across written datasets follow the same distribution, while spoken datasets feature a significant number of comments with very few words.}
 		\label{fig:words-per-comment}
 	\end{figure}
-	
-	Figures~\ref{fig:comments-per-discussion},\ref{fig:words-per-comment} show the number of comments in each discussion, and the number of words per comment in our dataset respectively. We can see that most discussions are comprised of only a few comments, although there is a significant tail of very long discussions. Similarly, most comments are relatively short (<100 words), although there is again a long tail of very long comments.
+	%TODO: standardize the term "comment"
+	Figures~\ref{fig:comments-per-discussion},\ref{fig:words-per-comment} show some of the structural differences of spoken and written datasets. Spoken datasets feature a significantly larger number of comments per discussion, since instances where the participants talk over each other, or interrupt the other are transcribed as separate comments. Additionally, spoken datasets feature a large amount of comments with very few words, since a lot of utterances are short but necessary for social co-ordination (e.g., ``Thank you'', ``Yes'', ``I agree'').
 	
 	
 	
