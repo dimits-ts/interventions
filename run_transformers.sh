@@ -1,49 +1,59 @@
 #!/bin/bash
 
-LOG_FILE="logs/pefk_facilitation.log"
-mkdir -p logs
-touch $LOG_FILE
+set -e  # stop on error
 
-echo "Training..."
-python src/trans_train.py \
-    --output_dir=checkpoints/all \
-    --logs_dir=logs/all \
-    --dataset_path=../facilitation-dataset/pefk.csv \
-    --datasets=ceri,fora,wikitactics,whow,iq2 \
-    --target_label=should_intervene | tee "$LOG_FILE"
+DATASET_PATH="../facilitation-dataset/pefk.csv"
+TRAIN_VAL_TEST_SPLITS_PATH="data/trans_input"
 
-python src/trans_train.py \
-    --output_dir=checkpoints/spoken \
-    --logs_dir=logs/spoken \
-    --dataset_path=../facilitation-dataset/pefk.csv \
-    --datasets=fora,whow,iq2 \
-    --target_label=should_intervene | tee "$LOG_FILE"
+# Define splits
+declare -A SPLITS
+SPLITS[all]="ceri,fora,wikitactics,whow,iq2"
+SPLITS[spoken]="fora,whow,iq2"
+SPLITS[written]="ceri,wikitactics"
 
-python src/trans_train.py \
-    --output_dir=checkpoints/written \
-    --logs_dir=logs/written \
-    --dataset_path=../facilitation-dataset/pefk.csv \
-    --datasets=ceri,wikitactics \
-     --target_label=should_intervene | tee "$LOG_FILE"
+run_experiment () {
+    local TASK=$1
+    local TARGET=$2
+    local LOG_FILE="logs/${TASK}/pefk_facilitation.log"
 
-echo "Testing..."
-python src/trans_test.py \
-    --checkpoint-dir=checkpoints/all \
-    --output-dir=data/trans_results/all \
-    --dataset-path=../facilitation-dataset/pefk.csv \
-    --datasets=ceri,fora,wikitactics,whow,iq2 \
-    --target-label=should_intervene | tee "$LOG_FILE"
+    mkdir -p logs/${TASK}
+    touch "$LOG_FILE"
 
-python src/trans_test.py \
-    --checkpoint-dir=checkpoints/spoken \
-    --output-dir=data/trans_results/spoken \
-    --dataset-path=../facilitation-dataset/pefk.csv \
-    --datasets=fora,whow,iq2 \
-    --target-label=should_intervene | tee "$LOG_FILE"
+    echo "==== $TASK | Splits ===="
+    python src/trans_preprocessing.py \
+        --dataset-path=$DATASET_PATH \
+        --output-dir=${TRAIN_VAL_TEST_SPLITS_PATH}/${TASK} \
+        --target-label=$TARGET
 
-python src/trans_test.py \
-    --checkpoint-dir=checkpoints/written \
-    --output-dir=data/trans_results/written \
-    --dataset-path=../facilitation-dataset/pefk.csv \
-    --datasets=ceri,wikitactics \
-    --target-label=should_intervene | tee "$LOG_FILE"
+    echo "==== $TASK | Training ===="
+
+    for SPLIT in written spoken all; do
+        SPLIT_INPUT_DIR=${TRAIN_VAL_TEST_SPLITS_PATH}/${TASK}
+
+        python src/trans_train.py \
+            --full-df=$DATASET_PATH \
+            --splits-input-dir=$SPLIT_INPUT_DIR \
+            --output-dir=checkpoints/${TASK}/${SPLIT} \
+            --logs-dir=logs/${TASK}/${SPLIT} \
+            --datasets=${SPLITS[$SPLIT]} \
+            --target-label=$TARGET | tee -a "$LOG_FILE"
+    done
+
+    echo "==== $TASK | Testing ===="
+
+    for SPLIT in "${!SPLITS[@]}"; do
+        SPLIT_INPUT_DIR=${TRAIN_VAL_TEST_SPLITS_PATH}/${TASK}
+
+        python src/trans_test.py \
+            --checkpoint-dir=checkpoints/${TASK}/${SPLIT} \
+            --output-dir=data/trans_results/${TASK}/${SPLIT} \
+            --full-dataset-path=$DATASET_PATH \
+            --splits-input-dir=$SPLIT_INPUT_DIR \
+            --datasets=${SPLITS[$SPLIT]} \
+            --target-label=$TARGET | tee -a "$LOG_FILE"
+    done
+}
+
+# Run both tasks
+run_experiment "prediction" "should_intervene"
+run_experiment "detection" "is_moderator"

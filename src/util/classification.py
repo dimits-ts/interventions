@@ -1,4 +1,3 @@
-
 # Intervention Detection in Discussions
 # Copyright (C) 2026 Dimitris Tsirmpas
 
@@ -19,7 +18,6 @@
 
 import random
 from collections.abc import Iterable
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -282,7 +280,7 @@ class SmartBucketBatchSampler(torch.utils.data.Sampler[list[int]]):
     def __iter__(self):
         # -- bucketed indices, then shuffle buckets --
         batches = [
-            self.sorted_indices[i:i + self.batch_size]
+            self.sorted_indices[i: i + self.batch_size]
             for i in range(0, len(self.sorted_indices), self.batch_size)
         ]
         if self.drop_last and len(batches[-1]) < self.batch_size:
@@ -352,17 +350,6 @@ class EarlyStoppingWithWarmupStepsCallback(transformers.TrainerCallback):
         return control
 
 
-def preprocess_dataset(
-    df: pd.DataFrame, dataset_ls: list[str] | None = None
-) -> pd.DataFrame:
-    if dataset_ls is not None:
-        df = df[df.dataset.isin(dataset_ls)]
-    df = df.reset_index()
-    df.is_moderator = df.is_moderator.astype(float)
-    df.text = df.text.astype(str)
-    return df
-
-
 def set_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
@@ -379,31 +366,15 @@ def compute_metrics(eval_pred):
     }
 
 
-def train_validate_test_split(
-    df,
-    train_percent=0.6,
-    validate_percent=0.2,
-    seed=None,
-    stratify_col: str | None = None,
-):
-    # First split into train and temp (validate + test)
-    train, temp = sklearn.model_selection.train_test_split(
-        df,
-        stratify=None if stratify_col is None else df[stratify_col],
-        test_size=1 - train_percent,
-        random_state=seed,
-    )
-
-    # Then split temp into validate and test
-    validate_size = validate_percent / (1 - train_percent)
-    validate, test = sklearn.model_selection.train_test_split(
-        temp,
-        stratify=None if stratify_col is None else temp[stratify_col],
-        test_size=1 - validate_size,
-        random_state=seed,
-    )
-
-    return train, validate, test
+def preprocess_dataset(
+    df: pd.DataFrame, dataset_ls: list[str] | None = None
+) -> pd.DataFrame:
+    if dataset_ls is not None:
+        df = df[df.dataset.isin(dataset_ls)]
+    df = df.reset_index()
+    df.is_moderator = df.is_moderator.astype(float)
+    df.text = df.text.astype(str)
+    return df
 
 
 def results_to_df(
@@ -431,43 +402,6 @@ def results_to_df(
     )
 
     return df_metrics
-
-
-def get_implied_actual_mod_df(
-    full_corpus: pd.DataFrame,
-    mod_threshold: float,
-    mod_probability_file: Path,
-) -> pd.Series:
-    full_corpus.is_moderator = full_corpus.is_moderator.astype(bool)
-    full_corpus.moderation_supported = full_corpus.moderation_supported.astype(
-        bool
-    )
-
-    # Load mod probability file and filter for inferred moderator comments
-    mod_prob_df = util.io.progress_load_csv(mod_probability_file)
-    high_conf_ids = set(
-        mod_prob_df.loc[
-            mod_prob_df.mod_probabilities.astype(float) >= mod_threshold,
-            "message_id",
-        ].dropna()
-    )
-
-    # Moderator-supported comments (true moderators)
-    mod_comments = full_corpus[
-        (full_corpus.is_moderator) & (full_corpus.moderation_supported)
-    ]
-
-    # Inferred moderator comments: non-moderators whose message_id is in
-    # high_conf_ids
-    inferred_mod_comments = full_corpus[
-        full_corpus.message_id.isin(high_conf_ids)
-    ]
-
-    selected = pd.concat(
-        [mod_comments, inferred_mod_comments], ignore_index=True
-    ).drop_duplicates()
-
-    return selected
 
 
 def collate_fn(tokenizer, batch: list[dict[str, str | float]]):

@@ -26,7 +26,8 @@ MODEL = "answerdotai/ModernBERT-large"
 def main(
     checkpoint_dir: Path,
     output_dir: Path,
-    dataset_path: Path,
+    splits_input_dir: Path,
+    full_dataset_path: Path,
     dataset_ls: list[str],
     target_label: str,
 ) -> None:
@@ -34,18 +35,14 @@ def main(
     util.classification.set_seed(util.classification.SEED)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    df = util.io.progress_load_csv(dataset_path)
+    df = util.io.progress_load_csv(full_dataset_path)
     df = util.classification.preprocess_dataset(df, dataset_ls)
     # remove comment if should_intervene is the target
     # (only case where NaNs should exist)
     df = df.dropna(subset=target_label)
 
-    _, _, test_df = util.classification.train_validate_test_split(
-        df,
-        stratify_col=target_label,
-        train_percent=0.6,
-        validate_percent=0.2,
-    )
+    test_df = pd.read_csv(splits_input_dir / "test.csv")
+    test_df = util.classification.preprocess_dataset(test_df, dataset_ls)
 
     best_model_dir = checkpoint_dir / "best_model"
     model = transformers.AutoModelForSequenceClassification.from_pretrained(
@@ -229,7 +226,13 @@ if __name__ == "__main__":
         required=True,
     )
     parser.add_argument(
-        "--dataset-path",
+        "--full-dataset-path",
+        type=str,
+        help="The path of the whole dataset",
+        required=True,
+    )
+    parser.add_argument(
+        "--splits-input-dir",
         type=str,
         help="The path of the whole dataset",
         required=True,
@@ -239,11 +242,6 @@ if __name__ == "__main__":
         type=str,
         help="Output directory for results",
         required=True,
-    )
-    parser.add_argument(
-        "--only-test",
-        action=argparse.BooleanOptionalAction,
-        default=False,
     )
     parser.add_argument(
         "--target-label",
@@ -256,7 +254,8 @@ if __name__ == "__main__":
     main(
         checkpoint_dir=Path(args.checkpoint_dir),
         output_dir=Path(args.output_dir),
-        dataset_path=Path(args.dataset_path),
+        full_dataset_path=Path(args.full_dataset_path),
         target_label=args.target_label,
         dataset_ls=args.datasets.split(","),
+        splits_input_dir=Path(args.splits_input_dir),
     )

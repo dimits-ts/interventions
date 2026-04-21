@@ -37,15 +37,16 @@ def writer_thread_func(write_queue: queue.Queue, out_path: Path):
 
 
 def progress_load_csv(
-    csv_path: Path | str, chunksize: int = 100000
+    csv_path: Path | str
 ) -> pd.DataFrame:
+    chunksize = 100000
     return pd.concat(
         [
             chunk
             for chunk in tqdm(
                 pd.read_csv(csv_path, chunksize=chunksize),
                 desc="Loading dataset",
-                total=get_num_chunks(csv_path, chunksize),
+                total=get_num_chunks(csv_path, chunksize) * 60 / 100,
                 bar_format="{l_bar}{bar} {percentage:.0f}%",
                 leave=False,
             )

@@ -20,6 +20,7 @@ from pathlib import Path
 import argparse
 
 import transformers
+import pandas as pd
 
 import util.io
 import util.classification
@@ -36,13 +37,16 @@ CTX_LENGTH_COMMENTS = 3
 MODEL = "answerdotai/ModernBERT-large"
 
 
-def main(args) -> None:
-    dataset_path = Path(args.dataset_path)
-    dataset_ls = args.datasets.split(",")
-    logs_dir = Path(args.logs_dir)
-    output_dir = Path(args.output_dir)
-    target_label = args.target_label
+def main(
+    full_df_path: Path,
+    input_dir: Path,
+    output_dir: Path,
+    logs_dir: Path,
+    dataset_ls: list[str],
+    target_label: str,
+) -> None:
 
+    # prevent overriding
     if output_dir.exists() and any(output_dir.iterdir()):
         print(
             f"Output directory {output_dir} already has results,"
@@ -50,27 +54,23 @@ def main(args) -> None:
         )
         return
 
+    full_df = util.io.progress_load_csv(full_df_path)
+    full_df = util.classification.preprocess_dataset(full_df, dataset_ls)
+
+    train_df = pd.read_csv(input_dir / "train.csv")
+    train_df = util.classification.preprocess_dataset(train_df, dataset_ls)
+
+    val_df = pd.read_csv(input_dir / "val.csv")
+    val_df = util.classification.preprocess_dataset(val_df, dataset_ls)
+
     print("Selected datasets: ", dataset_ls)
-    util.classification.set_seed(util.classification.SEED)
-
-    df = util.io.progress_load_csv(dataset_path)
-    df = util.classification.preprocess_dataset(df, dataset_ls)
-    # remove comment if should_intervene is the target
-    # (only case where NaNs should exist)
-    df = df.dropna(subset=target_label)
-
-    pos_weight = (df[target_label] == 0).sum() / (df[target_label] == 1).sum()
-
-    train_df, val_df, _ = util.classification.train_validate_test_split(
-        df,
-        stratify_col=target_label,
-        train_percent=0.6,
-        validate_percent=0.2,
-    )
+    pos_weight = (full_df[target_label] == 0).sum() / (
+        full_df[target_label] == 1
+    ).sum()
     tokenizer = transformers.AutoTokenizer.from_pretrained(MODEL)
 
     train_dataset = util.classification.DiscussionDataset(
-        full_df=df,
+        full_df=full_df,
         target_df=train_df,
         tokenizer=tokenizer,
         max_length_chars=MAX_LENGTH_CHARS,
@@ -78,22 +78,13 @@ def main(args) -> None:
         max_context_turns=CTX_LENGTH_COMMENTS,
     )
     val_dataset = util.classification.DiscussionDataset(
-        full_df=df,
+        full_df=full_df,
         target_df=val_df,
         tokenizer=tokenizer,
         max_length_chars=MAX_LENGTH_CHARS,
         label_column=target_label,
         max_context_turns=CTX_LENGTH_COMMENTS,
     )
-
-    print("DEBUG: Checking a few samples:")
-    for i in range(5):
-        ex = train_dataset[i]
-        print(f"\n--- Sample {i} ---")
-        print(ex["text"])
-        print(f"Label: {ex['label']}\n")
-
-    print("Starting training...")
 
     train_model(
         train_dataset,
@@ -142,7 +133,6 @@ def train_model(
         greater_is_better=False,
         report_to="tensorboard",
         logging_dir=logs_dir,
-                
     )
 
     early_stopping = util.classification.EarlyStoppingWithWarmupStepsCallback(
@@ -174,40 +164,48 @@ def train_model(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Dataset selection")
     parser.add_argument(
+        "--full-df-path",
+        type=str,
+        help="The entire dataset",
+        required=True,
+    )
+    parser.add_argument(
         "--datasets",
         type=str,
         help="Comma-separated list of datasets",
         required=True,
     )
     parser.add_argument(
-        "--dataset_path",
+        "--splits-input-dir",
         type=str,
-        help="The path of the whole dataset",
+        help="The path containing the train, val, test splits",
         required=True,
     )
     parser.add_argument(
-        "--output_dir",
+        "--output-dir",
         type=str,
         help="Output directory for results",
         required=True,
     )
     parser.add_argument(
-        "--logs_dir",
+        "--logs-dir",
         type=str,
         help="Directory for training logs",
         required=True,
     )
     parser.add_argument(
-        "--only_test",
-        action=argparse.BooleanOptionalAction,
-        default=False,
-    )
-    parser.add_argument(
-        "--target_label",
+        "--target-label",
         type=str,
         default="is_moderator",
         choices=["is_moderator", "should_intervene"],
         help="Which column to use as the target label",
     )
     args = parser.parse_args()
-    main(args)
+    main(
+        full_df_path=Path(args.full_df_path),
+        input_dir=Path(args.splits_input_dir),
+        dataset_ls=args.datasets.split(","),
+        logs_dir=Path(args.logs_dir),
+        output_dir=Path(args.output_dir),
+        target_label=args.target_label,
+    )
