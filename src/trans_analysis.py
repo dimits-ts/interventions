@@ -26,7 +26,9 @@ def main(input_dir: Path, graph_dir: Path, tables_dir: Path):
 
 
 def plot_metrics(df):
-    # Convert to long format for easier plotting
+    sns.set_theme(style="whitegrid")
+
+    # Convert to long format
     df_long = df.melt(
         id_vars="Threshold",
         value_vars=["Precision", "Recall", "F1"],
@@ -34,13 +36,49 @@ def plot_metrics(df):
         value_name="value",
     )
 
-    # Plot
-    ax = sns.lineplot(data=df_long, x="Threshold", y="value", hue="metric")
+    fig, ax = plt.subplots(figsize=(6, 4))
+
+    # Colorblind-friendly palette
+    palette = sns.color_palette("colorblind", 3)
+
+    # Plot lines
+    sns.lineplot(
+        data=df_long,
+        x="Threshold",
+        y="value",
+        hue="metric",
+        style="metric",
+        dashes=True,
+        palette=palette,
+        markers=True,
+        ax=ax,
+        legend=True,
+    )
+
+    # Add shading manually per metric
+    for metric, color in zip(["Precision", "Recall", "F1"], palette):
+        ax.fill_between(
+            df["Threshold"],
+            df[metric],
+            alpha=0.15,
+            color=color,
+        )
+
+    # Labels and limits
+    ax.set_xlabel("Threshold", fontsize=12)
+    ax.set_ylabel("Score", fontsize=12)
+    ax.set_xlim(-0.01, 1.1)
+    ax.set_ylim(0, 1.1)
+
+    # Clean legend
     legend = ax.get_legend()
     if legend is not None:
         legend.set_title(None)
-    plt.xlabel("Threshold")
-    plt.ylabel("Score")
+
+    sns.despine()
+    plt.tight_layout()
+
+    return ax
 
 
 def export_results(
@@ -74,7 +112,7 @@ def export_results(
         column_format="lrrrr",
         na_rep="",
         buf=filepath,
-        position="t"
+        position="t",
     )
 
 
