@@ -83,13 +83,12 @@ def main(
         tokenizer=tokenizer,
         label_column=target_label,
     )
-    
+
     pr_df = precision_recall_table_from_logits(
         logits,
         labels,
-        # remove the threshold>=1 since it is meaningless
         thresholds=[
-            round(t, 2) for t in list(torch.linspace(0.0, 1.0, 20).numpy())
+            round(t, 2) for t in list(torch.linspace(0.0, 1.0, 21).numpy())
         ],
     )
     print(pr_df)
@@ -159,7 +158,7 @@ def res_df_from_logits_and_labels(
     rows = []
     for name, group in df_eval.groupby("dataset"):
         y_true = group[label_column].astype(int).values  # <-- cast to int
-        y_pred = group["pred"].astype(int).values         # <-- cast to int
+        y_pred = group["pred"].astype(int).values  # <-- cast to int
 
         precision, recall, f1, _ = (
             sklearn.metrics.precision_recall_fscore_support(
@@ -259,5 +258,5 @@ if __name__ == "__main__":
         output_dir=Path(args.output_dir),
         dataset_path=Path(args.dataset_path),
         target_label=args.target_label,
-        dataset_ls=args.datasets.split(",")
+        dataset_ls=args.datasets.split(","),
     )

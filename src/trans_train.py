@@ -64,8 +64,8 @@ def main(args) -> None:
     train_df, val_df, _ = util.classification.train_validate_test_split(
         df,
         stratify_col=target_label,
-        train_percent=0.8,
-        validate_percent=0.1,
+        train_percent=0.6,
+        validate_percent=0.2,
     )
     tokenizer = transformers.AutoTokenizer.from_pretrained(MODEL)
 
@@ -142,6 +142,7 @@ def train_model(
         greater_is_better=False,
         report_to="tensorboard",
         logging_dir=logs_dir,
+                
     )
 
     early_stopping = util.classification.EarlyStoppingWithWarmupStepsCallback(

@@ -9,7 +9,7 @@ python src/trans_train.py \
     --output_dir=checkpoints/all \
     --logs_dir=logs/all \
     --dataset_path=../facilitation-dataset/pefk.csv \
-    --datasets=ceri,fora,wikitactics,whow,umod,iq2 \
+    --datasets=ceri,fora,wikitactics,whow,iq2 \
     --target_label=should_intervene | tee "$LOG_FILE"
 
 python src/trans_train.py \
@@ -23,7 +23,7 @@ python src/trans_train.py \
     --output_dir=checkpoints/written \
     --logs_dir=logs/written \
     --dataset_path=../facilitation-dataset/pefk.csv \
-    --datasets=ceri,wikitactics,umod \
+    --datasets=ceri,wikitactics \
      --target_label=should_intervene | tee "$LOG_FILE"
 
 echo "Testing..."
@@ -31,7 +31,7 @@ python src/trans_test.py \
     --checkpoint-dir=checkpoints/all \
     --output-dir=data/trans_results/all \
     --dataset-path=../facilitation-dataset/pefk.csv \
-    --datasets=ceri,fora,wikitactics,whow,umod,iq2 \
+    --datasets=ceri,fora,wikitactics,whow,iq2 \
     --target-label=should_intervene | tee "$LOG_FILE"
 
 python src/trans_test.py \
@@ -45,5 +45,5 @@ python src/trans_test.py \
     --checkpoint-dir=checkpoints/written \
     --output-dir=data/trans_results/written \
     --dataset-path=../facilitation-dataset/pefk.csv \
-    --datasets=ceri,wikitactics,umod \
+    --datasets=ceri,wikitactics \
     --target-label=should_intervene | tee "$LOG_FILE"
