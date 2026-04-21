@@ -31,6 +31,9 @@ def main(
     human_alias = {
         key: f"A{i+1}" for i, key in enumerate(sorted(human_dfs.keys()))
     }
+    print("Aliases used:")
+    print(human_alias)
+    
     human_dfs = {human_alias[k]: v for k, v in human_dfs.items()}
 
     malformed_ids = get_malformed_ids(human_dfs)
