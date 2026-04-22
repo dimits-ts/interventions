@@ -3,6 +3,7 @@ import re
 from pathlib import Path
 
 import pandas as pd
+import numpy as np
 
 
 ANNOTATION_COLS = [
@@ -33,7 +34,7 @@ def main(
     }
     print("Aliases used:")
     print(human_alias)
-    
+
     human_dfs = {human_alias[k]: v for k, v in human_dfs.items()}
 
     malformed_ids = get_malformed_ids(human_dfs)
@@ -73,6 +74,9 @@ def main(
         column_to_move = output_df.pop("text")
         output_df.insert(1, "text", column_to_move)
         output_df = output_df.set_index("conv_id")
+        output_df.dataset = np.where(
+            output_df.dataset.isin(["iq2", "whow", "fora"]), "oral", "written"
+        )
 
         n_missing = output_df["text"].isna().sum()
         if n_missing:
@@ -94,12 +98,12 @@ def load_text_file(path: Path) -> pd.DataFrame:
     """Load a CSV/TSV with at least conv_id and text columns."""
     sep = "\t" if path.suffix.lower() == ".tsv" else ","
     df = pd.read_csv(path, sep=sep, dtype={"conv_id": str})
-    missing = {"conv_id", "text"} - set(df.columns)
+    missing = {"conv_id", "text", "dataset"} - set(df.columns)
     if missing:
         raise ValueError(
             f"Text file {path} is missing required columns: {missing}"
         )
-    df = df[["conv_id", "text"]].drop_duplicates(
+    df = df[["conv_id", "text", "dataset"]].drop_duplicates(
         subset="conv_id", keep="first"
     )
     return df
