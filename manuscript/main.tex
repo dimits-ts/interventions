@@ -22,6 +22,7 @@
 \setlist[itemize]{noitemsep, nosep}
 \usepackage{booktabs}
 \usepackage{amssymb}
+\usepackage{amsthm}
 \usepackage{acronym}
 \usepackage{xcolor}
 
@@ -29,12 +30,16 @@
 \newcommand{\dt}[1]{\textcolor{darkblue}{#1}}
 
 \newtheorem{definition}{Definition}
-\newtheorem{research-question}{RQ}
+\newtheorem*{researchquestion}{RQ}
+\newcounter{subrq}
+\renewcommand{\thesubrq}{(\alph{subrq})}
 
-\title{To Intervene or not to Intervene: Examining Facilitator Tendencies in Online Discussions}
+\newenvironment{subrq}{\refstepcounter{subrq}\par\noindent\textbf{RQ~\thesubrq.} \itshape}{\par}
+
+
+\title{To Intervene or not to Intervene: Detecting and Examining Facilitator Tendencies in Online Discussions}
 
 \graphicspath{{../graphs} {graphs}}
-
 
 
 \begin{document}
@@ -45,40 +50,40 @@
 	
 	
 	\section{Introduction}
-
-	\begin{figure}[ht]
+	
+	Deciding when to intervene in a discussion is a matter of great importance. Intervening too early or too frequently may lead to users expressing frustration at being constantly interrupted, while intervening too late may lead to a significant escalation and derailment of the discussion~\citep{korre-etal-2025-evaluation, gao-etal-2025-moderation}. However, this task remains underexplored in literature, with current studies using ground-truth labels on which users are facilitators \citep{chen-etal-2025-whow, schroeder-etal-2024-fora, gao-etal-2025-moderation}. The task proves harder when considering that a facilitative comment is not necessarily made by dedicated facilitators; since in online environments, facilitative feedback may be primarily provided by the users themselves~\citep{umod}.
+	
+	
+	\begin{figure}[!t]
 		\includegraphics[width=\columnwidth]{intro.drawio.png}
 		\caption{At any point in a discussion, the facilitator must decide whether to intervene or not. Not intervening when the situation calls for it may lead to the discussion worsening (e.g., topic derailment, escalation, missed participation). On the other hand, intervening when the discussion is already going well may lead to irritation among participants.}
 		\label{fig:intro}
 	\end{figure}
 	
+	In this study we focus on the following \ac{rq}:
 	
-	
-	Deciding when to intervene in a discussion is a matter of great importance. Intervening too early or too frequently may lead to users expressing frustration at being constantly interrupted, while intervening too late may lead to a significant escalation and derailment of the discussion~\citep{korre-etal-2025-evaluation, gao-etal-2025-moderation}. However, this task remains underexplored in literature, with current studies using ground-truth labels on which users are facilitators \citep{chen-etal-2025-whow, schroeder-etal-2024-fora, gao-etal-2025-moderation}. The task proves harder when considering that a facilitative comment is not necessarily made by dedicated facilitators; since in online environments, facilitative feedback may be primarily provided by the users themselves~\citep{umod}.
-	
-	In this study we focus on the following \acp{rq}:
-	
-	\begin{research-question}
-		\label{rq:definition}
-		How should we define facilitative interventions?
-	\end{research-question}
+	\begin{researchquestion}
+		\label{rq:prediction}
+		Can we reliably predict when an intervention should occur?
+	\end{researchquestion}
 	
 	\dt{We investigate different ways of defining and detecting facilitative interventions from prior Social Science and \ac{nlp} literature in \S\ref{sec:related:interventions}. We compare current approaches based on their assumptions, ease-of-use in research, inherent limitations, and applicability in real-world settings, finding two viable definitions. (1) A facilitative intervention should occur when a professional facilitator would have intervened (Definition~\ref{def:facilitator}), or (2) when the average human judges that an intervention is necessary (Definition~\ref{def:facilitative}). }
 	
-	\begin{research-question}
-		\label{rq:prediction}
-		Can we reliably predict when an intervention should occur?
-	\end{research-question}
+	\dt{Given the two definitions of a facilitative intervention, this \ac{rq} can be partitioned to two sub-\acp{rq}}:
 	
-	\dt{Given the two definitions of a facilitative intervention, this \ac{rq} can be partitioned to two sub-\acp{rq}: (1) Can we predict when a facilitator would have intervened? (2) Can human (or LLM) annotators agree when an intervention is necessary? We find that...}
+	\begin{subrq}
+		Can we predict when a facilitator would have intervened?
+	\end{subrq}
+	\begin{subrq}
+		Can human (or LLM) annotators agree when an intervention is necessary?
+	\end{subrq}
 	
 	\dt{Finally, given that current literature is split between facilitation in online, asynchronous, written exchanges and real-time spoken discussions (\S\ref{sec:datset:written-vs-spoken}), we investigate:}
-	\begin{research-question}
+	\begin{subrq}
 		\label{rq:spoken-vs-written}
 		How do facilitative intervention patterns differ in written/asynchronous contexts from spoken/synchronous discussions?
-	\end{research-question}
+	\end{subrq}
 	Our investigation finds that...
-	
 	
 	\section{Related Work}
 	
@@ -119,6 +124,8 @@
 	
 	\subsection{Facilitation detection}
 	
+	\textbf{Dimitris. What most platforms do is to use flagging and reports to decide when to intervene. Mention Grok as a facilitative agent that works by invocation only. Briefly talk about advantages and disadvantages of current approach.}
+	
 	\dt{While some recent work~\cite{schroeder-etal-2024-fora, chen-etal-2025-whow} uses LLM-as-a-judge models to annotate data in the field of facilitation, the use of such models may not be an obvious choice for the task of facilitation prediction. It has been demonstrated that LLM facilitators can not decide when they should intervene irrespective of instructions and model family/size--instead, since these models are trained as chatbot assistants, they constantly attempt to speak~\citep{tsirmpas2026}. On the other hand, the use of traditional \ac{ml} and \ac{dl} classifiers is often used in the context of escalation prediction~\cite{cmv_awry2,Yuan_Singh_2023}.}
 	
 	%Alternatively, facilitation interventions can be seen as a specific case of turn-taking, the process with which humans take turns speaking in a discussion. The goal of turn-taking is typically to minimize idle time in discussions, while letting most participants take part in the discussion. This process is opaque and largely learned after years of social interaction for humans, while only experimental coarse-grained solutions have been devised for automated systems~\citep{frai_turn_taking}. One solution is to use a dedicated smaller model whose only task is to decide whether a larger model should speak~\citep{chen-etal-2025-llamapie}.\footnote{The authors specifically use LLM finetuning for the smaller model, but provide no explanation for why a traditional transformer-based classifier wouldn't be sufficient for the task.} No such approach to our knowledge has been used in facilitative settings.
@@ -155,24 +162,31 @@
 	\dt{\citet{korre-etal-2025-evaluation} provide a list of datasets relating to discussion facilitation which we combine to create a multi-domain dataset focused around facilitation, called the ``\ac{pefk}'' dataset  (Table~\ref{tab:datasets}). \ac{pefk} is the first dataset to compile information on facilitative interventions from both the domain of online forums, and spoken (debates, radio, and deliberative) discussions. Furthermore, our dataset standardizes discussion content, metadata, metrics, and labeling schemes according to a simple, unified schema, making it suitable as a benchmark on facilitator interventions.\footnote{Specifically, interventions following the assumption of professional facilitators (Definition~\ref{def:facilitator}). Due to the extremely large size of the dataset, following human judgment to mark facilitative comments (Definition~\ref{def:facilitative}) would be prohibitively expensive.}} See App.~\ref{app:dataset} for more information on preprocessing and the schema used.
 	%Unlike its predecessors, \ac{pefk} is large in size and rich in comment-level information, allowing us to run thorough analysis between similar datasets.
 	
-	
-	
-	In order to help research in the field of facilitation, we openly release our dataset under a CC-BY-SA license, and the code that compiles it under GPLv3.
-	%TODO: include only in CR
-	%\footnote{The Fora dataset \citep{schroeder-etal-2024-fora} is not publicly available. Under an agreement with the authors we include the hashes of each comment instead of the original text. Researchers should contact the authors of Fora for access, after which they can merge their data with our completed dataset.} 
-
-	
-	\section{Current practices}
-	
-	\textbf{Dimitris. What most platforms do is to use flagging and reports to decide when to intervene. Mention Grok as a facilitative agent that works by invocation only. Briefly talk about advantages and disadvantages of current approach.}
-	
 	\begin{figure}[t]
 		\includegraphics[width=\columnwidth]{analysis_moderation_perc.png}
-		\caption{Percentage of moderated comments for each of the sub-datasets of \ac{pefk}. Despite the different kinds of facilitators in online platforms and various real-life-discussion domains, the overall rate of facilitation remains similar across datasets.}
+		\caption{Percentage of moderated comments for each of the sub-datasets of \ac{pefk}. Bars denote 95\% confidence intervals. Despite the different kinds of facilitators in online platforms and various real-life-discussion domains, the overall rate of facilitation remains similar across datasets.}
 		\label{fig:moderation-perc}
 	\end{figure}
 	
 	Figure~\ref{fig:moderation-perc} shows the percentage of comments made by facilitators for each of our datasets. In almost all datasets, a third of the comments are made by facilitators.\footnote{We do not include the UMOD dataset, since its percentage is based on our own thresholding (see~\ref{app:dataset:preprocessing}).}
+	
+	
+	\subsection{Spoken vs. written datasets}
+	
+	\begin{figure*}[t]
+		\includegraphics[width=\columnwidth]{analysis_comments_per_discussion.png}
+		\includegraphics[width=\columnwidth]{analysis_words_per_comment.png}
+		\caption{\textbf{Left:} Comments per discussion on the \ac{pefk} dataset. Note the significant increase in comments made in transcribed datasets such as Fora and IQ2. This deviation is explained by the fact that a single human utterance is regularly broken up to many comments in order to simulate interruptions or participants talking over each other. \textbf{Right:} Number of words per comment in all discussions on the \ac{pefk} dataset, grouped by original dataset. Comments across written datasets follow the same distribution, while spoken datasets feature a significant number of comments with very few words.}
+		\label{fig:dataset-stats}
+	\end{figure*}
+	
+	%TODO: standardize the term "comment"
+	Figures~\ref{fig:dataset-stats} show some of the structural differences of spoken and written datasets. Spoken datasets feature a significantly larger number of comments per discussion, since instances where the participants talk over each other, or interrupt the other are transcribed as separate comments. Additionally, spoken datasets feature a large amount of comments with very few words, since a lot of utterances are short but necessary for social co-ordination (e.g., ``Thank you'', ``Yes'', ``I agree'').
+	
+	%TODO: include only in CR
+	%\footnote{The Fora dataset \citep{schroeder-etal-2024-fora} is not publicly available. Under an agreement with the authors we include the hashes of each comment instead of the original text. Researchers should contact the authors of Fora for access, after which they can merge their data with our completed dataset.} 
+	
+	
 	
 	
 	\section{Predicting facilitator comments}
@@ -197,7 +211,7 @@
 	
 	\subsection{Why use humans?}
 	
-	\paragraph{Merits.}\kk{\citet{korre-etal-2025-evaluation} state that a fully-automated facilitation is still out of our reach as LLMs tend to be very intruding and repetitive, and fixate on the moderation side of facilitation. Human facilitators, on the other hand, can step in the conversation with a more empathetic outlook, take into deep consideration the context of the conversation, while also being more sensitive to the differences and causes of certain social behaviors.}
+	\paragraph{Merits.} \kk{Recent research states that a fully-automated facilitation is still out of our reach as LLMs tend to be very intruding and repetitive, and fixate on the moderation side of facilitation \cite{tsirmpas2026, korre-etal-2025-evaluation}. Human facilitators, on the other hand, can step in the conversation with a more empathetic outlook, take into deep consideration the context of the conversation, while also being more sensitive to the differences and causes of certain social behaviors.}
 	
 	\paragraph{Disadvantages.} \kk{However, recruiting human facilitators, which also indicates a sort of expertise, is not a scalable process. In terms of LLM and human annotation alignment, \cite{movva-etal-2024-annotation} focusing on online safety contexts, show that LLMs are quite monodimensional and larger datasets are needed to understand if LLMs can adequately represent different demographic groups. This can also be translated in the context of facilitation, when LLMs \textit{get triggered} only when toxicity appears in the text, disregarding the encouragement of prosocial behavior.}
 	
@@ -206,9 +220,23 @@
 	
 	
 	\subsection{Experimental setup}
-	% \textbf{Katerina}. Annotation study. We leave experimental details for the appendix, but mention expert annotators, basic procedure, data and setup here. Also talk about positive vs negative reinforcement.
-	\kk{We should an introductory paragraph that summarizes all the method.}
+	
+	\kk{Our experimental setup is guided by two key questions: “Under what circumstances do facilitators intervene?” and “How do they intervene?” For the second question, rather than attempting to provide an exhaustive list of all possible methods, we focus specifically on positive and negative reinforcement.
+		Positive and negative reinforcement here should be understood as insights that emerged from our discussions with annotators, rather than as predefined moderation tools. In particular, positive reinforcement has often been overlooked, even though our goal in annotation and evaluation was not limited to moderation alone. Instead, we aimed to capture a broader range of interaction dynamics, including how constructive or supportive responses can be recognized and encouraged, not just how harmful content is flagged or constrained. At the same time, our analysis operates at a higher level—focused on facilitation rather than fine-grained categorization—so we do not center on highly specific reinforcement types, but instead draw on initial intuitions such as their relative frequency and overall role in shaping interactions}
+	
+	\paragraph{Data Segmentation}
+	\kk{We split multi-party discussions from the PEFK dataset into small, defined chunks based on [discourse boundaries like topic shifts and adjacency relations]. Annotators would read only one chunk at a time rather than full conversations.
+		This design limited access to global context while preserving local coherence within each unit.
+		We did this to align annotation with realistic, moment-by-moment interpretation in natural dialogue.
+		It reduces hindsight bias from later parts of the conversation influencing earlier judgments.
+		It also prevents annotators from reconstructing overly coherent narratives that were not locally available.
+	}
+	
 	\paragraph{Annotator Profile.}
+	\kk	{In designing our data annotation framework, we intentionally prioritized the recruitment of expert annotators over expert moderators. This distinction is pivotal to our research design: whereas expert moderators typically engage in post hoc intervention—addressing content only after its publication—expert annotators facilitate a more proactive analysis of the discourse as it unfolds. However, acknowledging the importance of moderation experience we also include a professional moderator into the workflow to provide a more just comparison. }
+	
+	\kk{We operate under the premise that the majority of discussion facilitation and moderation is conducted organically by the participants themselves through user-driven flagging mechanisms or actual dialogue.}
+	
 	\kk{We recruited 10 expert annotators for the task of reinforcement detection and classification. All annotators had extensive experience with NLP annotation tasks. The gender distribution was relatively balanced with 4 males and 6 females, while their ages had a median of 25 years. Before the commencement of the annotation process, the annotators completed an agreement form in compliance with GDPR ethical requirements. They were compensated in accordance with Greek legislation. } 
 	
 	
@@ -220,38 +248,29 @@
 	
 	
 	\subsection{Results}
-	% \begin{table}[!t]
-		% \centering
-		% \small
-		% \label{tab:kappas_reinforcement}
-		% \begin{tabular}{lcc}
-			% \hline
-			% \textbf{Class} & \textbf{Cohen's $\kappa$} & \textbf{Fleiss' $\kappa$} \\
-			% \hline
-			% Positive reinforcement & 0.144 & 0.135 \\
-			% Negative reinforcement & 0.358 & 0.358 \\
-			% No reinforcement       & 0.110 & 0.050 \\
-			% \hline
-			% \end{tabular}
-		% \caption{Inter-annotator agreement per reinforcement class (binary $\geq 3 =$ Yes)}
-		% \end{table}
 	
+	\begin{figure*}[!t]
+		\centering
+		\includegraphics[width=1\linewidth]{agreements.png}
+		\caption{Pairwise Cohen's $\kappa$ per class.}
+		\label{fig:class_heatmaps}
+	\end{figure*}
 	
-	\begin{table}[h]
+	\begin{table}[!t]
 		\centering
 		\small
-		\begin{tabular}{lccc}
+		\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcc}
 			\toprule
-			\textbf{Category} & \textbf{Humans} & \textbf{Models} & \textbf{All} \\
+			\textbf{Category} & \textbf{Humans} & \textbf{Models} \\
 			\midrule
-			Positive          & 0.34           & 0.50           & 0.21                \\
-			Negative          & 0.41           & 0.56           & 0.28                 \\
-			No-Reinforcement  & 0.32           & 0.46           & 0.20                 \\
+			Positive          & 0.50           & 0.50 \\
+			Negative          & 0.58           & 0.56 \\
+			No-Reinforcement  & 0.47           & 0.46 \\
 			\bottomrule
-		\end{tabular}
-		\caption{IAA (Fleiss $\kappa$) comparison within the human annotator group, model group, and both humans and models.}\label{tab:iaa_all}
+		\end{tabular*}
+		\caption{IAA (Fleiss $\kappa$) comparison within the human annotator group, model group, and both humans and models.}
+		\label{tab:iaa_all}
 	\end{table}
-	
 	
 	
 	\begin{figure}[!t]
@@ -278,14 +297,14 @@
 	\end{figure}
 	
 	
-	Apart from some \textit{negligible} exceptions, human annotators very cautious when it comes to intervening, with most often selecting to not intervene (no reinforcement). When it comes to whether they choose positive or negative reinforcement, the discrepancy is not that great, with positive reinforcement being selected slightly more often. However, it must be noted (we need to connect this with the previous results), that despite the slightly higher frequency of positive reinforcement, they agree more on where intervene with negative reinforcement.
+	Apart from some \textit{negligible} exceptions, human annotators very cautious when it comes to intervening, with most often selecting to not intervene (no reinforcement). When it comes to whether they choose positive or negative reinforcement, the discrepancy is not that great, with positive reinforcement being selected slightly more often. However, it must be noted (we need to connect this with the previous results), that despite the slightly higher frequency of positive reinforcement, they agree more on where intervene with negative reinforcement. \kk{We also run a small scale IAA analysis looking at the oral datasets (debates, and ..) in comparison to the written datasets (forums) and the difference in IAA is minimal with ~30\% and ~33\% Fleiss $\kappa$ respectively.}
 	
 	
 	\subsection{Could we use LLMs instead of annotators?}
 	
 	The models on the other hand, are more consistent, with overall higher intervention frequency than you humans (we need to connect this with the fact that models very often become too intrusive). Also, they are more liberal with the intervention types, with the most frequent one being the positive reinforcement, and last on the no-reinforcement. We see an almost \textit{oppositve} behaviour.
 	
-	\dt{Prior work on LLMs-as-facilitators indicates that they are way too overeager to intervene [CITE]. Unlike their setup, which simply prompted LLMs to intervene ``when absolutely necessary'', our setup explicitly asks the models whether they would have intervened with positive or negative reinforcement, or without intervention at all. However, the rates of interventions seem to be the same as the ones reported by the authors, suggesting that the \emph{over-eagerness to intervene cannot be solved by prompting}. Therefore, we believe that out-of-the-box LLMs can not be used for facilitation.}
+	\dt{\citet{tsirmpas2026} indicate that LLM facilitators are way too overeager to intervene. The setup used by the authors simply prompted LLMs to intervene ``when absolutely necessary''. Unlike their work, we explicitly ask the models whether they would have intervened without them engaging with the discussion, or explicitly having a facilitator role. We initially hypothesized that this setup would lead to the models being less prone to intervening, since they are no longer instructed to make the discussion better as a facilitator.\footnote{The fact that LLMs are biased to always respond was hypothesized by the original authors to be the main reason this phenomenon occurs.} However, the rates of interventions seem to be the same as the ones reported by the authors, suggesting that the \emph{over-eagerness to intervene is unlikely to be solvable by simply using prompting}. Therefore, we believe that out-of-the-box LLMs can not be used for facilitation.}
 	
 	
 	
@@ -297,7 +316,10 @@
 	None, we are awesome.
 	
 	\section{Ethical Considerations}
-	All experiments and data have passed through official ethical approval by an Ethics Committee, and are compatible with GDPR and the EU AI Act. The annotators signed informed consent forms before beginning annotation and were allowed to skip uncomfortable tasks at any point, with no required justification.
+	All experiments and data have passed through official ethical approval by an Ethics Committee, and are compatible with GDPR~\citep{GDPR} and the EU AI Act~\citep{eu_ai_act}. The annotators were compensated fairly with a monthly rate of 1000€ and signed informed consent forms before beginning annotation and were allowed to skip uncomfortable tasks at any point, with no required justification.
+	
+	
+	In order to help research in the field of facilitation, we openly release our dataset under a CC-BY-SA license, and the code that compiles it under GPLv3.
 	
 	\bibliography{refs}
 	\appendix
@@ -402,23 +424,192 @@
 	\end{table*}
 	
 	
-	\subsection{Statistics}
-	\label{app:dataset:stats}
+	\section{Expert facilitators vs. expert annotators}
+	\begin{table}[!t]
+		\small
+		\centering
+		\begin{tabular}{lc}
+			\toprule
+			\textbf{Annotator} & \textbf{Correlation with A11} \\
+			\midrule
+			A6  & 0.492 \\
+			A10 & 0.464 \\
+			A2  & 0.432 \\
+			A8  & 0.430 \\
+			A1  & 0.396 \\
+			A9  & 0.385 \\
+			A4  & 0.383 \\
+			A3  & 0.363 \\
+			A12 & 0.301 \\
+			A7  & 0.279 \\
+			A5  & 0.249 \\
+			\midrule
+			\textbf{Mean} & \textbf{0.380} \\
+			\textbf{Min}  & \textbf{0.249} \\
+			\textbf{Max}  & \textbf{0.492} \\
+			\bottomrule
+		\end{tabular}
+		\caption{Correlation of Expert Moderators with Other Annotators}
+	\end{table}
 	
-	\begin{figure}[t]
-		\includegraphics[width=\columnwidth]{analysis_comments_per_discussion.png}
-		\caption{Comments per discussion on the \ac{pefk} dataset. Note the significant increase in comments made in transcribed datasets such as Fora and IQ2. This deviation is explained by the fact that a single human utterance is regularly broken up to many comments in order to simulate interruptions or participants talking over each other.}
-		\label{fig:comments-per-discussion}
-	\end{figure}
-	
-	\begin{figure}[t]
-		\includegraphics[width=\columnwidth]{analysis_words_per_comment.png}
-		\caption{Number of words per comment in all discussions on the \ac{pefk} dataset, grouped by original dataset. Comments across written datasets follow the same distribution, while spoken datasets feature a significant number of comments with very few words.}
-		\label{fig:words-per-comment}
-	\end{figure}
-	%TODO: standardize the term "comment"
-	Figures~\ref{fig:comments-per-discussion},\ref{fig:words-per-comment} show some of the structural differences of spoken and written datasets. Spoken datasets feature a significantly larger number of comments per discussion, since instances where the participants talk over each other, or interrupt the other are transcribed as separate comments. Additionally, spoken datasets feature a large amount of comments with very few words, since a lot of utterances are short but necessary for social co-ordination (e.g., ``Thank you'', ``Yes'', ``I agree'').
 	
 	
+	\begin{table*}[!t]
+		\centering
+		\small
+		\begin{tabular}{lccccc}
+			\toprule
+			\textbf{Annotator} & \textbf{Negative (\%)} & \textbf{No Reinforcement (\%)} & \textbf{Positive (\%)} & \textbf{Intervention Rate (\%)} & \textbf{Pos - Neg (pp)} \\
+			\midrule
+			A1  & 27.61 & 31.99 & 40.40 & 68.01 & 12.78 \\
+			A2  & 27.65 & 49.62 & 22.73 & 50.38 & -4.92 \\
+			A3  & 39.77 & 13.65 & 46.57 & 86.35 & 6.80 \\
+			A4  & 23.82 & 47.59 & 28.59 & 52.41 & 4.77 \\
+			A5  & 20.78 & 47.95 & 31.27 & 52.05 & 10.50 \\
+			A6  & 24.73 & 53.11 & 22.16 & 46.89 & -2.57 \\
+			A7  & 19.84 & 46.21 & 33.95 & 53.79 & 14.11 \\
+			A8  & 24.47 & 38.93 & 36.60 & 61.07 & 12.13 \\
+			A9  & 25.52 & 43.51 & 30.97 & 56.49 & 5.45 \\
+			A10 & 24.52 & 43.32 & 32.15 & 56.68 & 7.63 \\
+			A11 & 28.12 & 43.08 & 28.80 & 56.92 & 0.69 \\
+			A12 & 17.81 & 65.40 & 16.79 & 34.60 & -1.01 \\
+			\bottomrule
+		\end{tabular}
+		\caption{Behavioral Summary of Annotators (Percentages)}
+	\end{table*}
+	
+	\kk{A11 does not exhibit the characteristics one would expect from a distinct “expert” annotator, but instead behaves as a highly balanced and representative member of the group. In contrast to other annotators who show clear directional biases—either favoring positive reinforcement (e.g., A1, A7, A8) or leaning negative (e.g., A2, A6)—A11 distributes judgments almost evenly between positive (28.80\%) and negative (28.12\%) labels, resulting in a near-zero difference (0.69 percentage points). At the same time, A11’s intervention rate (56.92\%) is almost identical to the group average, indicating that it is neither more strict nor more lenient in deciding when to intervene. When considered alongside the moderate correlation scores with other annotators (mean ~ 0.38), this pattern suggests that A11 does not consistently align more strongly with the group than others do, nor does it systematically deviate in a principled way. Instead, A11 appears to occupy the “center” of the annotator space: its behavior closely reflects the aggregate tendencies of the group without amplifying any particular bias. Consequently, the data do not support interpreting A11 as a clear expert or gold-standard annotator; rather, A11 is better characterized as a calibrated, balanced annotator whose decisions approximate the overall distribution of judgments in the dataset.}
+	
+	
+	\section{Prompts used}
+	
+	\subsection{Yes/no intervention}
+	
+	You are an expert annotator specializing in online moderation and facilitation.
+	You will be presented with a comment and the comments made before it.
+	Choose whether you decide to intervene at this point in the discussion.
+	
+	Key Rules for Annotating: 
+	
+	\textbf{Look at Intent and Impact}
+	Consider what the commenter seems to be trying to do, and how their words might affect others in the thread.
+	
+	\textbf{Use the Context}
+	Always check the surrounding messages. A comment that looks fine on its own might escalate tension when viewed in context—and vice versa. 
+	
+	\textbf{Judge Behavior, Not Opinions}
+	The label should never depend on whether you personally agree with the comment. Focus on tone, clarity, constructiveness, and how it influences the conversation.
+	
+	\textbf{Remain Consistent}
+	Apply the same standards across all comments. Avoid guessing or over-interpreting; use what is present in the text.
+	
+	\textbf{Output}
+	Respond whether you would intervene in this discussion as a facilitator on a scale of 1-5, where 1 is "I'm sure I don't need to intervene", and 5 is "I'm sure I need to intervene"
+	
+	
+	\subsection{Positive vs. negative reinforcement}
+	
+	You are an expert facilitator. You will be presented with a discussion. Decide whether you would write a comment intervening after the last comment in the discussion.
+	
+	\textbf{The Core Rating Task}
+	
+	For every comment, you must write out a response of 1 (uncertain) to 5 (certain):
+	
+	
+	\textbf{Positive Reinforcement}
+	
+	Defined as an intervention whose purpose is to encourage a specific behavior. For example, a moderator may ask people to participate, ask a person to elaborate etc.
+	
+	Positive reinforcement is not related to positive speech; the moderator may be strict or even rude when attempting to encourage specific behaviors (e.g., ``I will not tolerate any further discussion on this topic. It's been decided and we're moving on.'').
+	
+	Rate this when a conversation demonstrates behavior that should be encouraged or reinforced in a synchronous exchange. Your task is not simply to identify positive behaviors, but to identify moments where reinforcing them would help sustain or build constructive conversational momentum.
+	
+	This includes, but is not limited to:
+	\begin{itemize}
+		\item Helpful or clarifying explanations
+		\item Respectful disagreement
+		\item Constructive feedback
+		\item Polite, empathetic, or supportive tone
+		\item Efforts to de-escalate conflict
+		\item Any contribution that meaningfully improves the quality or direction of the conversation
+	\end{itemize}
+	
+	\textbf{Negative Reinforcement}
+	
+	The purpose of negative reinforcement is to discourage unwanted or disruptive behaviors. This is correlated, but not necessarily closely related to threats or enforcement of disciplinary action.
+	
+	Negative reinforcement is not related to negative speech; the moderator may be kind and diplomatic when discouraging behaviors (e.g., ``I've received multiple complaints about your behavior on this forum. Please refrain from making personal attacks and inflammatory comments.'').
+	
+	Rate this when the comment reflects harmful, disruptive, or inappropriate behavior that should be discouraged, as well as cases where some participants dominate the conversation, or when the conversation starts to go off topic.
+	
+	Other examples include:
+	\begin{itemize}
+		\item Hostile, dismissive, or disrespectful language
+		\item Personal attacks or insults
+		\item Repeated interruptions or monopolizing the exchange
+		\item Escalating conflict rather than resolving it
+		\item Contributions that reduce the overall quality of the conversation
+	\end{itemize}
+	
+	\textbf{No Reinforcement}
+	
+	Rate this when the comment is neutral, unremarkable, or does not affect the tone or direction of the conversation.
+	
+	This includes:
+	\begin{itemize}
+		\item Basic factual statements
+		\item Clarifying questions
+		\item Minimal or vague comments
+		\item Harmless but non-notable contributions
+	\end{itemize}
+	
+	\textbf{Key Rules for Annotating}
+	
+	\textbf{Look at Intent and Impact} \\
+	Consider what the commenter seems to be trying to do, and how their words might affect others in the thread.
+	
+	\textbf{Use the Context} \\
+	Always check the surrounding messages. A comment that looks fine on its own might escalate tension when viewed in context—and vice versa.
+	
+	\textbf{Judge Behavior, Not Opinions} \\
+	The label should never depend on whether you personally agree with the comment. Focus on tone, clarity, constructiveness, and how it influences the conversation.
+	
+	\textbf{Remain Consistent} \\
+	Apply the same standards across all comments. Avoid guessing or over-interpreting; use what is present in the text.
+	
+	\textbf{Output}
+	
+	Respond whether you would intervene in this discussion as a facilitator.
+	
+	Always respond with the following format and nothing else:
+	
+	\begin{verbatim}
+		Positive: 1-5
+		Negative: 1-5
+		No Reinforcement: 1-5
+	\end{verbatim}
+	
+	\subsection{Single-comment facilitation}
+	
+	You are an expert annotator specializing in online moderation and facilitation.
+	You will be presented with a comment and the comments made before it.
+	Choose whether you decide to intervene at this point in the discussion.
+	
+	Key Rules for Annotating: 
+	
+	\textbf{Look at Intent and Impact}
+	Consider what the commenter seems to be trying to do, and how their words might affect others in the thread.
+	
+	\textbf{Use the Context}
+	Always check the surrounding messages. A comment that looks fine on its own might escalate tension when viewed in context—and vice versa. 
+	
+	\textbf{Judge Behavior, Not Opinions}
+	The label should never depend on whether you personally agree with the comment. Focus on tone, clarity, constructiveness, and how it influences the conversation.
+	
+	\textbf{Remain Consistent}
+	Apply the same standards across all comments. Avoid guessing or over-interpreting; use what is present in the text.
+	
+	\textbf{Output}
+	Respond whether you would intervene in this discussion as a facilitator on a scale of 1-5, where 1 is "I'm sure I don't need to intervene", and 5 is "I'm sure I need to intervene"
 	
 \end{document}
