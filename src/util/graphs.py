@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 
+MARKERS = ["o", "s", "D", "^", "v", "P", "X", "3", "_", "H", "8"]
+HATCHES = ["//", "\\\\", "--", "oo", "..", "**", "++", "--", "||", "xx"]
+
 COLORBLIND_PALETTE = [
     "#000000",  # black
     "#E69F00",  # orange
