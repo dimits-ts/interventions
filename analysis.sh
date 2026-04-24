@@ -11,6 +11,6 @@ python src/dataset_analysis.py \
     --graph-dir graphs
 
 python src/trans_analysis.py \
-    --input-dir data/trans_results \
-    --graph-dir graphs \
-    --tables-dir manuscript/generated
+    --input-dir data/trans_results/prediction \
+    --graph-dir graphs/prediction \
+    --tables-dir manuscript/generated/prediction

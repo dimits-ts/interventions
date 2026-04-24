@@ -10,6 +10,8 @@ import util.graphs
 
 def main(input_dir: Path, graph_dir: Path, tables_dir: Path):
     util.graphs.seaborn_setup()
+    graph_dir.mkdir(exist_ok=True, parents=True)
+    tables_dir.mkdir(exist_ok=True, parents=True)
 
     for entry in input_dir.iterdir():
         if entry.is_dir():
@@ -101,14 +103,15 @@ def export_results(
     -------
     str (if filepath is None)
     """
+    split = filepath.stem
     df.to_latex(
         index=False,
         float_format=float_format,
         bold_rows=False,
         longtable=False,
         escape=False,
-        caption=f"Classifier performance trained on {filepath.stem} datasets",
-        label="tab:metrics",
+        caption=f"Classifier performance trained on {split} datasets",
+        label=f"tab:metrics_{split}",
         column_format="lrrrr",
         na_rep="",
         buf=filepath,
