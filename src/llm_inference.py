@@ -19,6 +19,7 @@ def main(
     hf_model_name: str,
 ):
     SYSTEM_PROMPT = system_prompt_path.read_text().strip()
+    output_csv_path.parent.mkdir(exist_ok=True, parents=True)
 
     df = pd.read_csv(input_csv_path)
     llm = syndisco.model.TransformersModel(
@@ -30,6 +31,7 @@ def main(
     outputs = []
     for _, row in tqdm(df.iterrows(), total=len(df)):
         text = str(row[TEXT_COLUMN])[:MAX_LENGTH_CHARS]
+        text = text.replace("moderator", "X").replace("Moderator", "X")
         res = llm.prompt(
             system_prompt=SYSTEM_PROMPT,
             user_prompt=text,
