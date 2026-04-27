@@ -4,6 +4,8 @@ reinforcement_annotation/
 pefk.csv
 all_annotations.csv
 trans_input/
+llm_input/prediction
+llm_input/detection
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

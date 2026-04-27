@@ -1,6 +1,7 @@
 from pathlib import Path
 import argparse
 
+import pandas as pd
 import sklearn.model_selection
 
 import util.io
@@ -9,14 +10,12 @@ import util.classification
 
 def main(
     dataset_path: Path,
-    output_dir: Path,
+    trans_output_dir: Path,
+    llm_output_dir: Path,
     target_label: str,
 ):
-    if output_dir.exists() and len(list(output_dir.iterdir())) > 0:
-        print(f"{output_dir} not empty. Skipping split generation...")
-        return
-
-    output_dir.mkdir(exist_ok=True, parents=True)
+    trans_output_dir.mkdir(exist_ok=True, parents=True)
+    llm_output_dir.mkdir(exist_ok=True, parents=True)
     util.classification.set_seed(util.classification.SEED)
 
     df = util.io.progress_load_csv(dataset_path)
@@ -32,9 +31,12 @@ def main(
         validate_percent=0.2,
     )
 
-    train_df.to_csv(output_dir / "train.csv")
-    val_df.to_csv(output_dir / "val.csv")
-    test_df.to_csv(output_dir / "test.csv")
+    llm_test_df = llm_test_subset(test_df, df)
+
+    llm_test_df.to_csv(llm_output_dir / "test.csv")
+    train_df.to_csv(trans_output_dir / "train.csv")
+    val_df.to_csv(trans_output_dir / "val.csv")
+    test_df.to_csv(trans_output_dir / "test.csv")
 
 
 def train_validate_test_split(
@@ -43,7 +45,7 @@ def train_validate_test_split(
     validate_percent=0.2,
     seed=None,
     stratify_col: str | None = None,
-):
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     # First split into train and temp (validate + test)
     train, temp = sklearn.model_selection.train_test_split(
         df,
@@ -52,16 +54,40 @@ def train_validate_test_split(
         random_state=seed,
     )
 
+    stratify_col = (
+        None if stratify_col is None else temp[stratify_col]  # type:ignore
+    )
     # Then split temp into validate and test
     validate_size = validate_percent / (1 - train_percent)
     validate, test = sklearn.model_selection.train_test_split(
         temp,
-        stratify=None if stratify_col is None else temp[stratify_col],
+        stratify=stratify_col,
         test_size=1 - validate_size,
         random_state=seed,
     )
 
-    return train, validate, test
+    return train, validate, test  # type: ignore
+
+
+def llm_test_subset(
+    test_df: pd.DataFrame,
+    full_df: pd.DataFrame,
+    n: int = 1000,
+    max_length_chars: int = 512,
+    max_context_turns: int = 4,
+) -> pd.DataFrame:
+    sampled = test_df.sample(
+        n=min(n, len(test_df)), random_state=util.classification.SEED
+    ).reset_index(drop=True)
+    id2row = full_df.set_index("message_id").to_dict("index")
+
+    sampled["sequence"] = [
+        util.classification.build_comment_sequence(
+            i, sampled, id2row, max_length_chars, max_context_turns
+        )
+        for i in range(len(sampled))
+    ]
+    return sampled
 
 
 if __name__ == "__main__":
@@ -73,9 +99,15 @@ if __name__ == "__main__":
         required=True,
     )
     parser.add_argument(
-        "--output-dir",
+        "--trans-output-dir",
         type=str,
-        help="Output directory for results",
+        help="Output directory for trans dataset splits",
+        required=True,
+    )
+    parser.add_argument(
+        "--llm-output-dir",
+        type=str,
+        help="Output directory for the llm test dataset split",
         required=True,
     )
     parser.add_argument(
@@ -88,6 +120,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     main(
         dataset_path=Path(args.dataset_path),
-        output_dir=Path(args.output_dir),
+        trans_output_dir=Path(args.trans_output_dir),
+        llm_output_dir=Path(args.llm_output_dir),
         target_label=args.target_label,
     )

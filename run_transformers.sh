@@ -4,6 +4,7 @@ set -e  # stop on error
 
 DATASET_PATH="../facilitation-dataset/pefk.csv"
 TRAIN_VAL_TEST_SPLITS_PATH="data/trans_input"
+LLM_TEST_PATH="data/llm_input"
 
 # Define splits
 declare -A SPLITS
@@ -19,15 +20,16 @@ run_experiment () {
     mkdir -p logs/${TASK}
     touch "$LOG_FILE"
 
-    echo "==== $TASK | Splits ===="
-    python src/trans_preprocessing.py \
+    echo "==== $TASK ===="
+    python src/preprocessing.py \
         --dataset-path=$DATASET_PATH \
-        --output-dir=${TRAIN_VAL_TEST_SPLITS_PATH}/${TASK} \
+        --trans-output-dir=${TRAIN_VAL_TEST_SPLITS_PATH}/${TASK} \
+        --llm-output-dir=${LLM_TEST_PATH}/${TASK}\
         --target-label=$TARGET
+    exit
 
-    echo "==== $TASK | Training ===="
 
-    for SPLIT in written spoken all; do
+    for SPLIT in spoken; do
         SPLIT_INPUT_DIR=${TRAIN_VAL_TEST_SPLITS_PATH}/${TASK}
 
         python src/trans_train.py \
@@ -37,12 +39,6 @@ run_experiment () {
             --logs-dir=logs/${TASK}/${SPLIT} \
             --datasets=${SPLITS[$SPLIT]} \
             --target-label=$TARGET | tee -a "$LOG_FILE"
-    done
-
-    echo "==== $TASK | Testing ===="
-
-    for SPLIT in "${!SPLITS[@]}"; do
-        SPLIT_INPUT_DIR=${TRAIN_VAL_TEST_SPLITS_PATH}/${TASK}
 
         python src/trans_test.py \
             --checkpoint-dir=checkpoints/${TASK}/${SPLIT} \
@@ -52,8 +48,9 @@ run_experiment () {
             --datasets=${SPLITS[$SPLIT]} \
             --target-label=$TARGET | tee -a "$LOG_FILE"
     done
+
 }
 
 # Run both tasks
 run_experiment "prediction" "should_intervene"
-run_experiment "detection" "is_moderator"
+#run_experiment "detection" "is_moderator"
