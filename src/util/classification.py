@@ -133,29 +133,13 @@ class DiscussionDataset(torch.utils.data.Dataset):
         previous comments as context. Each individual comment text is truncated
         to `max_length_chars` characters.
         """
-        target_row = self.df.iloc[idx]
-
-        # Truncate target text
-        truncated_target_text = self._truncate_text(target_row["text"])
-        target = f"<TGT>{truncated_target_text}</TGT>"
-
-        # Collect context comments (most recent first, then reversed)
-        context = []
-        current_id = target_row["reply_to"]
-        turns = 0
-        while pd.notna(current_id) and turns < self.max_context_turns:
-            row = self._id2row.get(current_id)
-            if not row:
-                break
-
-            truncated_ctx_text = self._truncate_text(row["text"])
-            turn = f"<CTX>{truncated_ctx_text}</CTX>"
-            context.insert(0, turn)  # prepend oldest first
-
-            current_id = row["reply_to"]
-            turns += 1
-
-        return " ".join(context + [target])
+        return build_comment_sequence(
+            idx,
+            df=self.df,
+            id2row=self._id2row,
+            max_length_chars=self.max_length_chars,
+            max_context_turns=self.max_context_turns,
+        )
 
     def length(self, idx: int) -> int:
         return self._lengths[idx]
@@ -348,6 +332,40 @@ class EarlyStoppingWithWarmupStepsCallback(transformers.TrainerCallback):
                 control.should_training_stop = True
 
         return control
+
+
+def build_comment_sequence(
+    idx: int,
+    df: pd.DataFrame,
+    id2row: dict,
+    max_length_chars: int,
+    max_context_turns: int,
+) -> str:
+    """
+    Builds a sequence of the target comment and up to `max_context_turns`
+    previous comments as context. Each individual comment text is truncated
+    to `max_length_chars` characters.
+    """
+    def truncate(text: str) -> str:
+        if len(text) <= max_length_chars:
+            return text
+        return text[:max_length_chars].rstrip()
+
+    target_row = df.iloc[idx]
+    target = f"<TGT>{truncate(target_row['text'])}</TGT>"
+
+    context = []
+    current_id = target_row["reply_to"]
+    turns = 0
+    while pd.notna(current_id) and turns < max_context_turns:
+        row = id2row.get(current_id)
+        if not row:
+            break
+        context.insert(0, f"<CTX>{truncate(row['text'])}</CTX>")
+        current_id = row.get("reply_to")
+        turns += 1
+
+    return " ".join(context + [target])
 
 
 def set_seed(seed):
