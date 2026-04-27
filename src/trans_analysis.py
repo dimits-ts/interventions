@@ -17,11 +17,9 @@ def main(input_dir: Path, graph_dir: Path, tables_dir: Path):
         if entry.is_dir():
             curves_df = pd.read_csv(entry / "pr_curves.csv", index_col=0)
             plot_metrics(curves_df)
-            graph_dir.mkdir(exist_ok=True)
             util.graphs.save_plot(graph_dir / f"pr_curves_{entry.name}.png")
 
             results_df = pd.read_csv(entry / "res_dataset.csv")
-            tables_dir.mkdir(exist_ok=True)
             export_results(
                 df=results_df, filepath=tables_dir / f"{entry.name}.tex"
             )
@@ -75,7 +73,7 @@ def plot_metrics(df):
     # Clean legend
     legend = ax.get_legend()
     if legend is not None:
-        legend.set_title(None)
+        legend.set_title(None) # type: ignore
 
     sns.despine()
     plt.tight_layout()

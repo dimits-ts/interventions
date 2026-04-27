@@ -26,10 +26,9 @@ run_experiment () {
         --trans-output-dir=${TRAIN_VAL_TEST_SPLITS_PATH}/${TASK} \
         --llm-output-dir=${LLM_TEST_PATH}/${TASK}\
         --target-label=$TARGET
-    exit
 
 
-    for SPLIT in spoken; do
+    for SPLIT in written spoken all; do
         SPLIT_INPUT_DIR=${TRAIN_VAL_TEST_SPLITS_PATH}/${TASK}
 
         python src/trans_train.py \
@@ -53,4 +52,4 @@ run_experiment () {
 
 # Run both tasks
 run_experiment "prediction" "should_intervene"
-#run_experiment "detection" "is_moderator"
+run_experiment "detection" "is_moderator"

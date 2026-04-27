@@ -14,3 +14,8 @@ python src/trans_analysis.py \
     --input-dir data/trans_results/prediction \
     --graph-dir graphs/prediction \
     --tables-dir manuscript/generated/prediction
+
+python src/trans_analysis.py \
+    --input-dir data/trans_results/detection \
+    --graph-dir graphs/detection \
+    --tables-dir manuscript/generated/detection

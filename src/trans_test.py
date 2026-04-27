@@ -98,7 +98,7 @@ def test_model(
     test_df: pd.DataFrame,
     full_df: pd.DataFrame,
     label_column: str,
-) -> pd.DataFrame:
+):
     """
     Single-pass evaluation: runs inference once on the full test set,
     computes per-dataset and overall metrics.

@@ -173,7 +173,7 @@ class WeightedLossTrainer(transformers.Trainer):
             else torch.tensor(pos_weight, dtype=torch.float)
         )
 
-    def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
+    def compute_loss(self, model, inputs, return_outputs=False):
         labels = inputs.get(
             "labels"
         ).float()  # shape: (batch_size, num_labels)
