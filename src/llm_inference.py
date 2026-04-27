@@ -5,6 +5,8 @@ import pandas as pd
 import syndisco.model
 from tqdm.auto import tqdm
 
+import util.classification
+
 
 TEXT_COLUMN = "discussion"
 OUTPUT_COLUMN = "response"
@@ -19,6 +21,11 @@ def main(
     hf_model_name: str,
 ):
     SYSTEM_PROMPT = system_prompt_path.read_text().strip()
+
+    if output_csv_path.exists():
+        print(f"{output_csv_path} exists, skipping LLM inference.")
+        return
+
     output_csv_path.parent.mkdir(exist_ok=True, parents=True)
 
     df = pd.read_csv(input_csv_path)
@@ -30,7 +37,7 @@ def main(
 
     outputs = []
     for _, row in tqdm(df.iterrows(), total=len(df)):
-        text = str(row[TEXT_COLUMN])[:MAX_LENGTH_CHARS]
+        text = str(row[TEXT_COLUMN])[:util.classification.MAX_LENGTH_CHARS]
         text = text.replace("moderator", "X").replace("Moderator", "X")
         res = llm.prompt(
             system_prompt=SYSTEM_PROMPT,

@@ -13,13 +13,11 @@ import util.classification
 
 
 EPOCHS = 80
-MAX_LENGTH_CHARS = 4000
 BATCH_SIZE = 64
 EARLY_STOP_WARMUP = 1
 EARLY_STOP_THRESHOLD = 0.001
 EARLY_STOP_PATIENCE = 6
 FINETUNE_ONLY_HEAD = True
-CTX_LENGTH_COMMENTS = 3
 MODEL = "answerdotai/ModernBERT-large"
 
 
@@ -111,9 +109,9 @@ def test_model(
         full_df=full_df.reset_index(drop=True),
         target_df=test_df.reset_index(drop=True),
         tokenizer=tokenizer,
-        max_length_chars=MAX_LENGTH_CHARS,
+        max_length_chars=util.classification.MAX_LENGTH_CHARS,
         label_column=label_column,
-        max_context_turns=CTX_LENGTH_COMMENTS,
+        max_context_turns=util.classification.CTX_LENGTH_COMMENTS,
     )
 
     logits, labels = _collect_logits_and_labels(model, full_ds, tokenizer)

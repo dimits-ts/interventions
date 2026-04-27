@@ -23,13 +23,14 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn
-import sklearn.model_selection
 import sklearn.metrics
 import transformers
 from tqdm.auto import tqdm
 
 
 SEED = 42
+MAX_LENGTH_CHARS = 3000
+CTX_LENGTH_COMMENTS = 3
 
 
 class DiscussionDataset(torch.utils.data.Dataset):
@@ -264,7 +265,7 @@ class SmartBucketBatchSampler(torch.utils.data.Sampler[list[int]]):
     def __iter__(self):
         # -- bucketed indices, then shuffle buckets --
         batches = [
-            self.sorted_indices[i: i + self.batch_size]
+            self.sorted_indices[i : i + self.batch_size]
             for i in range(0, len(self.sorted_indices), self.batch_size)
         ]
         if self.drop_last and len(batches[-1]) < self.batch_size:
@@ -346,6 +347,7 @@ def build_comment_sequence(
     previous comments as context. Each individual comment text is truncated
     to `max_length_chars` characters.
     """
+
     def truncate(text: str) -> str:
         if len(text) <= max_length_chars:
             return text

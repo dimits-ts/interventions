@@ -8,6 +8,9 @@ import util.io
 import util.classification
 
 
+NUM_LLM_SAMPLES = 1000
+
+
 def main(
     dataset_path: Path,
     trans_output_dir: Path,
@@ -31,7 +34,13 @@ def main(
         validate_percent=0.2,
     )
 
-    llm_test_df = llm_test_subset(test_df, df)
+    llm_test_df = llm_test_subset(
+        test_df,
+        df,
+        n=NUM_LLM_SAMPLES,
+        max_length_chars=util.classification.MAX_LENGTH_CHARS,
+        max_context_turns=util.classification.CTX_LENGTH_COMMENTS,
+    )
 
     llm_test_df.to_csv(llm_output_dir / "test.csv")
     train_df.to_csv(trans_output_dir / "train.csv")
@@ -73,8 +82,8 @@ def llm_test_subset(
     test_df: pd.DataFrame,
     full_df: pd.DataFrame,
     n: int = 1000,
-    max_length_chars: int = 512,
-    max_context_turns: int = 4,
+    max_length_chars: int = 3000,
+    max_context_turns: int = 3,
 ) -> pd.DataFrame:
     sampled = test_df.sample(
         n=min(n, len(test_df)), random_state=util.classification.SEED
@@ -87,6 +96,8 @@ def llm_test_subset(
         )
         for i in range(len(sampled))
     ]
+    sampled = sampled.loc[:, ["text", "is_moderator"]]
+    sampled = sampled.rename({"text": "discussion"}, axis=1)
     return sampled
 
 

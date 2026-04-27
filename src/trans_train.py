@@ -27,13 +27,11 @@ import util.classification
 
 
 EPOCHS = 80
-MAX_LENGTH_CHARS = 3000
 BATCH_SIZE = 64
 EARLY_STOP_WARMUP = 1
 EARLY_STOP_THRESHOLD = 0.001
 EARLY_STOP_PATIENCE = 6
 FINETUNE_ONLY_HEAD = True
-CTX_LENGTH_COMMENTS = 3
 MODEL = "answerdotai/ModernBERT-large"
 
 
@@ -73,17 +71,17 @@ def main(
         full_df=full_df,
         target_df=train_df,
         tokenizer=tokenizer,
-        max_length_chars=MAX_LENGTH_CHARS,
+        max_length_chars=util.classification.MAX_LENGTH_CHARS,
         label_column=target_label,
-        max_context_turns=CTX_LENGTH_COMMENTS,
+        max_context_turns=util.classification.CTX_LENGTH_COMMENTS,
     )
     val_dataset = util.classification.DiscussionDataset(
         full_df=full_df,
         target_df=val_df,
         tokenizer=tokenizer,
-        max_length_chars=MAX_LENGTH_CHARS,
+        max_length_chars=util.classification.MAX_LENGTH_CHARS,
         label_column=target_label,
-        max_context_turns=CTX_LENGTH_COMMENTS,
+        max_context_turns=util.classification.CTX_LENGTH_COMMENTS,
     )
 
     train_model(
