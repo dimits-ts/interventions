@@ -26,6 +26,7 @@ run_experiment () {
         --trans-output-dir=${TRAIN_VAL_TEST_SPLITS_PATH}/${TASK} \
         --llm-output-dir=${LLM_TEST_PATH}/${TASK}\
         --target-label=$TARGET
+    return
 
 
     for SPLIT in written spoken all; do

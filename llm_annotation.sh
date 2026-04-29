@@ -42,12 +42,25 @@ done
 for model_idx in "${!models[@]}"; do
     MOD_MODEL_URL="${models[$model_idx]}"
     MOD_MODEL_PSEUDO="${pseudos[$model_idx]}"
-    echo "timing.md $MOD_MODEL_PSEUDO"
+    echo "timing_prediction.md $MOD_MODEL_PSEUDO"
 
     python src/llm_inference.py \
         --input_csv data/llm_input/prediction/test.csv \
-        --output_csv data/llm_output/llm_intervention_${MOD_MODEL_PSEUDO}_timing.csv \
-        --system_prompt data/llm_input/instructions/timing.md \
+        --output_csv data/llm_output/llm_intervention_${MOD_MODEL_PSEUDO}_timing_prediction.csv \
+        --system_prompt data/llm_input/instructions/timing_prediction.md \
+        --hf_model_url "$MOD_MODEL_URL" \
+        --hf_model_name "$MOD_MODEL_PSEUDO"
+done
+
+for model_idx in "${!models[@]}"; do
+    MOD_MODEL_URL="${models[$model_idx]}"
+    MOD_MODEL_PSEUDO="${pseudos[$model_idx]}"
+    echo "timing_detection.md $MOD_MODEL_PSEUDO"
+
+    python src/llm_inference.py \
+        --input_csv data/llm_input/prediction/test.csv \
+        --output_csv data/llm_output/llm_intervention_${MOD_MODEL_PSEUDO}_timing_detection.csv \
+        --system_prompt data/llm_input/instructions/timing_detection.md \
         --hf_model_url "$MOD_MODEL_URL" \
         --hf_model_name "$MOD_MODEL_PSEUDO"
 done

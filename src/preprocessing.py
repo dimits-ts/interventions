@@ -96,8 +96,7 @@ def llm_test_subset(
         )
         for i in range(len(sampled))
     ]
-    sampled = sampled.loc[:, ["text", "is_moderator"]]
-    sampled = sampled.rename({"text": "discussion"}, axis=1)
+    sampled = sampled.rename({"sequence": "discussion"}, axis=1)
     return sampled
 
 
