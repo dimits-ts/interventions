@@ -155,8 +155,8 @@ def moderation_plot(df: pd.DataFrame, graph_dir: Path) -> None:
         estimator="mean",
         errorbar=("ci", 95),
         err_kws={
-            "linewidth": 2.5,
-            "color": "#00FFFF",
+            "linewidth": 3.5,
+            "color": "#EE4B2B",
         },
     )
     apply_hatches_to_histplot(ax, order)  # reuse the same patch-walker
@@ -205,7 +205,7 @@ def comments_per_discussion_plot(df: pd.DataFrame, graph_dir: Path) -> None:
     ax.set_xticklabels(["0", "100", "200", "300", "400", "500+"])
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    plt.xlabel("#Comments/Discussion")
+    plt.xlabel("#Comments per discussion")
     plt.ylabel("Density (stacked)")
 
     grouped_legend(ax, set(hue_order))
@@ -243,7 +243,7 @@ def words_per_comment_plot(df: pd.DataFrame, graph_dir: Path) -> None:
     ax.set_xticklabels(["0", "100", "200", "300", "400", "500+"])
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    plt.xlabel("#Words per Comment")
+    plt.xlabel("#Words per comment")
     plt.ylabel("Density (stacked)")
 
     grouped_legend(ax, set(hue_order))
