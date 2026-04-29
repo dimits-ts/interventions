@@ -45,7 +45,7 @@ def main(
         list(llm_annotation_dir.rglob("*_dual_interventions.md.csv"))
     )
     all_dfs = align_by_conv_id({**human_dfs, **llm_dfs})
-    all_dfs = remove_malformed_rows(all_dfs, malformed_ids)
+    #all_dfs = remove_malformed_rows(all_dfs, malformed_ids)
 
     # ── Single-intervention LLM annotations (binary yes/no column) ────────────
     single_dfs = load_llm_single_interventions(
@@ -56,9 +56,9 @@ def main(
         single_dfs_aligned = align_single_interventions(
             single_dfs, set(all_dfs.values().__iter__().__next__()["conv_id"])
         )
-        single_dfs_aligned = remove_malformed_rows_single(
-            single_dfs_aligned, malformed_ids
-        )
+        #single_dfs_aligned = remove_malformed_rows_single(
+        #    single_dfs_aligned, malformed_ids
+        #)
     else:
         single_dfs_aligned = {}
 
