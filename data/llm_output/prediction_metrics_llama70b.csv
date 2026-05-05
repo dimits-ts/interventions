@@ -1,5 +1,0 @@
-Model,File,Metric,Value
-llama70b,llm_intervention_llama70b_timing_prediction.csv,Precision,0.28
-llama70b,llm_intervention_llama70b_timing_prediction.csv,Recall,0.08069164265129683
-llama70b,llm_intervention_llama70b_timing_prediction.csv,F1-Score,0.12527964205816555
-llama70b,llm_intervention_llama70b_timing_prediction.csv,Support,1000.0

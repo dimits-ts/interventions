@@ -1,5 +1,0 @@
-Model,File,Metric,Value
-olmo7b,llm_intervention_olmo7b_timing_detection.csv,Precision,0.25
-olmo7b,llm_intervention_olmo7b_timing_detection.csv,Recall,0.043227665706051875
-olmo7b,llm_intervention_olmo7b_timing_detection.csv,F1-Score,0.07371007371007371
-olmo7b,llm_intervention_olmo7b_timing_detection.csv,Support,1000.0

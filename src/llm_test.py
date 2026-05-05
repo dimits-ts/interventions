@@ -74,74 +74,101 @@ def calculate_metrics(y_true: pd.Series, y_pred: pd.Series) -> dict:
 
 def process_file(
     file_path: Path,
-    output_dir: Path,
     truth_column: str,
     pred_column: str,
     metric_type: str,
-):
-    base_name = file_path.name
-    model_identifier = base_name.replace(
-        f"_timing_{metric_type}.csv", ""
-    ).split("_")[-1]
+) -> pd.DataFrame:
+    base_name = file_path.stem
+    model_identifier = base_name.split("_")[2]
 
     df = pd.read_csv(file_path)
 
-    y_true = df[truth_column]
+    results_rows = []
 
-    extracted_preds = df[pred_column].apply(extract_number_or_nan)
+    all_y_true = []
+    all_y_pred = []
 
-    y_pred = (extracted_preds >= 3).astype(int)
+    for dataset_name, group_df in df.groupby("dataset"):
+        y_true = group_df[truth_column]
 
-    metrics = calculate_metrics(y_true, y_pred)  # type: ignore
+        extracted_preds = group_df[pred_column].apply(extract_number_or_nan)
+        y_pred = (extracted_preds >= 3).astype(int)
 
-    results = {
-        "Model": model_identifier,
-        "File": base_name,
-        "Metric": ["Precision", "Recall", "F1-Score", "Support"],
-        "Value": [
-            metrics["Precision"],
-            metrics["Recall"],
-            metrics["F1-Score"],
-            metrics["Support"],
-        ],
-    }
-    results_df = pd.DataFrame(results)
+        all_y_true.append(y_true)
+        all_y_pred.append(y_pred)
 
-    output_filename = f"{metric_type}_metrics_{model_identifier}.csv"
-    output_path = output_dir / output_filename
-    results_df.to_csv(output_path, index=False)
+        metrics = calculate_metrics(y_true, y_pred)
+
+        results_rows.append(
+            {
+                "Model": model_identifier,
+                "Dataset": dataset_name,
+                "Precision": metrics["Precision"],
+                "Recall": metrics["Recall"],
+                "F1-Score": metrics["F1-Score"],
+                "Support": metrics["Support"],
+            }
+        )
+
+    # ---- OVERALL ROW ----
+    if all_y_true and all_y_pred:
+        overall_y_true = pd.concat(all_y_true)
+        overall_y_pred = pd.concat(all_y_pred)
+
+        overall_metrics = calculate_metrics(overall_y_true, overall_y_pred)
+
+        results_rows.append(
+            {
+                "Model": model_identifier,
+                "Dataset": "OVERALL",
+                "Precision": overall_metrics["Precision"],
+                "Recall": overall_metrics["Recall"],
+                "F1-Score": overall_metrics["F1-Score"],
+                "Support": overall_metrics["Support"],
+            }
+        )
+
+    return pd.DataFrame(results_rows)
 
 
 def process_all_files(annotations_dir: Path, output_dir: Path):
-    print("--- Starting Metric Calculation Process ---")
-    print(f"Annotations Directory: {annotations_dir}")
-    print(f"Output Directory: {output_dir}")
-
+    # ---- PREDICTION ----
     pred_pattern = annotations_dir / "llm_intervention_*_timing_prediction.csv"
     prediction_files = list(annotations_dir.glob(pred_pattern.name))
-    print(f"\n--- Found {len(prediction_files)} Prediction Files ---")
 
+    prediction_results = []
     for file_path in prediction_files:
-        process_file(
+        df = process_file(
             file_path=file_path,
-            output_dir=output_dir,
             truth_column="should_intervene",
             pred_column="response",
             metric_type="prediction",
         )
+        prediction_results.append(df)
 
+    if prediction_results:
+        final_pred_df = pd.concat(prediction_results, ignore_index=True)
+        final_pred_df.to_csv(
+            output_dir / "prediction_metrics.csv", index=False
+        )
+
+    # ---- DETECTION ----
     det_pattern = annotations_dir / "llm_intervention_*_timing_detection.csv"
     detection_files = list(annotations_dir.glob(det_pattern.name))
-    print(f"\n--- Found {len(detection_files)} Detection Files ---")
 
+    detection_results = []
     for file_path in detection_files:
-        process_file(
+        df = process_file(
             file_path=file_path,
-            output_dir=output_dir,
             truth_column="is_moderator",
             pred_column="response",
             metric_type="detection",
         )
+        detection_results.append(df)
+
+    if detection_results:
+        final_det_df = pd.concat(detection_results, ignore_index=True)
+        final_det_df.to_csv(output_dir / "detection_metrics.csv", index=False)
 
 
 if __name__ == "__main__":

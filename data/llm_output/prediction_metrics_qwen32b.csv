@@ -1,5 +1,0 @@
-Model,File,Metric,Value
-qwen32b,llm_intervention_qwen32b_timing_prediction.csv,Precision,0.35964912280701755
-qwen32b,llm_intervention_qwen32b_timing_prediction.csv,Recall,0.11815561959654179
-qwen32b,llm_intervention_qwen32b_timing_prediction.csv,F1-Score,0.17787418655097614
-qwen32b,llm_intervention_qwen32b_timing_prediction.csv,Support,1000.0

@@ -1,5 +1,0 @@
-Model,File,Metric,Value
-llama8b,llm_intervention_llama8b_timing_detection.csv,Precision,0.3466933867735471
-llama8b,llm_intervention_llama8b_timing_detection.csv,Recall,0.9971181556195965
-llama8b,llm_intervention_llama8b_timing_detection.csv,F1-Score,0.5144981412639406
-llama8b,llm_intervention_llama8b_timing_detection.csv,Support,1000.0
