@@ -1,0 +1,5 @@
+Model,File,Metric,Value
+qwen7b,llm_intervention_qwen7b_timing_prediction.csv,Precision,0.3710247349823322
+qwen7b,llm_intervention_qwen7b_timing_prediction.csv,Recall,0.6051873198847262
+qwen7b,llm_intervention_qwen7b_timing_prediction.csv,F1-Score,0.4600219058050383
+qwen7b,llm_intervention_qwen7b_timing_prediction.csv,Support,1000.0

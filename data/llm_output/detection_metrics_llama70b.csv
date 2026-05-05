@@ -1,0 +1,5 @@
+Model,File,Metric,Value
+llama70b,llm_intervention_llama70b_timing_detection.csv,Precision,0.48154981549815495
+llama70b,llm_intervention_llama70b_timing_detection.csv,Recall,0.7521613832853026
+llama70b,llm_intervention_llama70b_timing_detection.csv,F1-Score,0.5871766029246345
+llama70b,llm_intervention_llama70b_timing_detection.csv,Support,1000.0

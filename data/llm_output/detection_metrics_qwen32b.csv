@@ -1,0 +1,5 @@
+Model,File,Metric,Value
+qwen32b,llm_intervention_qwen32b_timing_detection.csv,Precision,0.6196808510638298
+qwen32b,llm_intervention_qwen32b_timing_detection.csv,Recall,0.6714697406340058
+qwen32b,llm_intervention_qwen32b_timing_detection.csv,F1-Score,0.6445366528354081
+qwen32b,llm_intervention_qwen32b_timing_detection.csv,Support,1000.0
