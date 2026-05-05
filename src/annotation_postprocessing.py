@@ -39,13 +39,13 @@ def main(
 
     text_df = load_text(text_file)
     output_df = output_df.merge(
-        text_df[["conv_id", "dataset", "text"]], on="conv_id", how="left"
+        text_df[["conv_id", "dataset"]], on="conv_id", how="left"
     )
     n_missing = output_df["dataset"].isna().sum()
     if n_missing:
         print(f"[warn] {n_missing} rows still have no dataset after recovery.")
 
-    output_df = output_df.dropna(subset="text")
+    output_df = output_df.dropna(subset="dataset")
     output_df = output_df.set_index("conv_id")
     print_coverage(output_df)
 
@@ -98,7 +98,7 @@ def load_human_annotations(directory: Path) -> dict[str, pd.DataFrame]:
 
 def read_human_file(path: Path) -> pd.DataFrame:
     df = pd.read_excel(path, dtype={"conv_id": str})[
-        ["conv_id", "data_malformation"] + ANNOTATION_COLS
+        ["conv_id", "discussion", "data_malformation"] + ANNOTATION_COLS
     ].copy()
     df = df.fillna(0)
     for col in ANNOTATION_COLS:
@@ -204,7 +204,8 @@ def build_output(
     human_names: set[str],
     single_dfs: dict[str, pd.DataFrame],
 ) -> pd.DataFrame:
-    merged = next(iter(dfs.values()))[["conv_id"]].copy()
+    first = next(iter(dfs.values()))
+    merged = first[["conv_id", "discussion"]].copy()
     human_malformed_cols = []
 
     for annotator, df in dfs.items():
