@@ -16,12 +16,17 @@ def main(
     human_dir: Path,
     llm_dir: Path,
     output_path: Path,
-    text_file: Path | None,
+    text_file: Path,
 ) -> None:
     human_dfs = load_human_annotations(human_dir)
     human_dfs = {
         f"A{i+1}": df for i, (_, df) in enumerate(sorted(human_dfs.items()))
     }
+    for alias, real in zip(
+        human_dfs.keys(),
+        [k for k, _ in sorted(load_human_annotations(human_dir).items())],
+    ):
+        print(f"  {alias} -> {real}")
 
     llm_dual_dfs = load_llm_dual_annotations(llm_dir)
     llm_single_dfs = load_llm_single_annotations(llm_dir)
@@ -32,22 +37,15 @@ def main(
 
     output_df = build_output(all_dfs, set(human_dfs), llm_single_dfs)
 
-    if text_file is not None:
-        text_df = load_text(text_file)
-        output_df = output_df.merge(text_df, on="conv_id", how="left")
-        output_df.insert(1, "text", output_df.pop("text"))
-        output_df["dataset"] = np.where(
-            output_df["dataset"].isin(["iq2", "whow", "fora"]),
-            "oral",
-            "written",
-        )
-        n_missing = output_df["text"].isna().sum()
-        if n_missing:
-            print(
-                f"[warn] {n_missing} conv_ids had no match in the text file."
-            )
-            print(output_df.loc[output_df["text"].isna(), "conv_id"])
+    text_df = load_text(text_file)
+    output_df = output_df.merge(
+        text_df[["conv_id", "dataset", "text"]], on="conv_id", how="left"
+    )
+    n_missing = output_df["dataset"].isna().sum()
+    if n_missing:
+        print(f"[warn] {n_missing} rows still have no dataset after recovery.")
 
+    output_df = output_df.dropna(subset="text")
     output_df = output_df.set_index("conv_id")
     print_coverage(output_df)
 
@@ -100,7 +98,7 @@ def load_human_annotations(directory: Path) -> dict[str, pd.DataFrame]:
 
 def read_human_file(path: Path) -> pd.DataFrame:
     df = pd.read_excel(path, dtype={"conv_id": str})[
-        ["conv_id", "discussion", "data_malformation"] + ANNOTATION_COLS
+        ["conv_id", "data_malformation"] + ANNOTATION_COLS
     ].copy()
     df = df.fillna(0)
     for col in ANNOTATION_COLS:
@@ -243,6 +241,10 @@ def build_output(
             how="left",
         )
 
+    human_annotation_cols = [
+        f"{h}_{col}" for h in human_names for col in ANNOTATION_COLS
+    ]
+    merged = merged.dropna(subset=human_annotation_cols, how="all")
     return (
         merged.drop_duplicates(subset="conv_id")
         .sort_values("conv_id")
