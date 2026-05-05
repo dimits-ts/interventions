@@ -33,9 +33,9 @@ def main(
         train_percent=0.6,
         validate_percent=0.2,
     )
-
+    # ceri,fora,wikitactics,whow,iq2
     llm_test_df = llm_test_subset(
-        test_df,
+        test_df.loc[test_df.moderation_supported],
         df,
         n=NUM_LLM_SAMPLES,
         max_length_chars=util.classification.MAX_LENGTH_CHARS,
@@ -81,7 +81,7 @@ def train_validate_test_split(
 def llm_test_subset(
     test_df: pd.DataFrame,
     full_df: pd.DataFrame,
-    n: int = 1000,
+    n: int = 1500,
     max_length_chars: int = 3000,
     max_context_turns: int = 3,
 ) -> pd.DataFrame:
