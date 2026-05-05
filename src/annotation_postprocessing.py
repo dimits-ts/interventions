@@ -98,8 +98,10 @@ def load_human_annotations(directory: Path) -> dict[str, pd.DataFrame]:
 
 def read_human_file(path: Path) -> pd.DataFrame:
     df = pd.read_excel(path, dtype={"conv_id": str})[
-        ["conv_id", "discussion", "data_malformation"] + ANNOTATION_COLS
+        ["conv_id", "discussion", "data_malformation", "rationale/comments"]
+        + ANNOTATION_COLS
     ].copy()
+    df = df.rename(columns={"rationale/comments": "rationale"})
     df = df.fillna(0)
     for col in ANNOTATION_COLS:
         df[col] = df[col].apply(
@@ -209,8 +211,13 @@ def build_output(
     human_malformed_cols = []
 
     for annotator, df in dfs.items():
+        has_rationale = "rationale" in df.columns
+        extra = ["rationale"] if has_rationale else []
+
         malformed_col = f"{annotator}_malformed"
-        subset = df[["conv_id", "data_malformation"] + ANNOTATION_COLS].copy()
+        subset = df[
+            ["conv_id", "data_malformation"] + ANNOTATION_COLS + extra
+        ].copy()
         subset[malformed_col] = (
             subset["data_malformation"]
             .astype(str)
@@ -219,10 +226,12 @@ def build_output(
             .astype(float)
         )
         subset = subset.drop(columns=["data_malformation"]).rename(
-            columns={col: f"{annotator}_{col}" for col in ANNOTATION_COLS}
+            columns={
+                col: f"{annotator}_{col}" for col in ANNOTATION_COLS + extra
+            }
         )
         cols = ["conv_id", malformed_col] + [
-            f"{annotator}_{col}" for col in ANNOTATION_COLS
+            f"{annotator}_{col}" for col in ANNOTATION_COLS + extra
         ]
         merged = merged.merge(subset[cols], on="conv_id", how="left")
         if annotator in human_names:
