@@ -133,24 +133,25 @@ def process_file(
             }
         )
 
-    # ---- OVERALL ROW ----
-    if all_y_true and all_y_pred:
-        overall_y_true = pd.concat(all_y_true)
-        overall_y_pred = pd.concat(all_y_pred)
+    # ---- OVERALL (MACRO) ROW ----
+    if results_rows:
+        df_results = pd.DataFrame(results_rows)
 
-        overall_metrics = calculate_metrics(overall_y_true, overall_y_pred)
+        macro_precision = df_results["Precision"].mean()
+        macro_recall = df_results["Recall"].mean()
+        macro_f1 = df_results["F1-Score"].mean()
+        total_support = df_results["Support"].sum()
 
         results_rows.append(
             {
                 "Model": model_identifier,
-                "Dataset": "OVERALL",
-                "Precision": overall_metrics["Precision"],
-                "Recall": overall_metrics["Recall"],
-                "F1-Score": overall_metrics["F1-Score"],
-                "Support": overall_metrics["Support"],
+                "Dataset": "All",
+                "Precision": macro_precision,
+                "Recall": macro_recall,
+                "F1-Score": macro_f1,
+                "Support": total_support,
             }
         )
-
     return pd.DataFrame(results_rows)
 
 
