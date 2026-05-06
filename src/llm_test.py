@@ -1,9 +1,61 @@
 import argparse
-from pathlib import Path
-import pandas as pd
-from sklearn.metrics import precision_score, recall_score, f1_score
-import numpy as np
 import re
+from pathlib import Path
+
+import sklearn.metrics
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+import util.graphs
+
+
+def main(annotations_dir: Path, output_dir: Path, graph_dir: Path):
+    util.graphs.seaborn_setup()
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    graph_dir.mkdir(parents=True, exist_ok=True)
+
+    # ---- PREDICTION ----
+    pred_pattern = annotations_dir / "llm_intervention_*_timing_prediction.csv"
+    prediction_files = list(annotations_dir.glob(pred_pattern.name))
+
+    prediction_results = []
+    for file_path in prediction_files:
+        df = process_file(
+            file_path=file_path,
+            truth_column="should_intervene",
+            pred_column="response",
+            metric_type="prediction",
+        )
+        prediction_results.append(df)
+
+    final_pred_df = pd.concat(prediction_results, ignore_index=True)
+    final_pred_df.to_csv(output_dir / "prediction_metrics.csv", index=False)
+    plot_combined_llm_histogram(
+        prediction_files, graph_dir, task_name="prediction"
+    )
+
+    # ---- DETECTION ----
+    det_pattern = annotations_dir / "llm_intervention_*_timing_detection.csv"
+    detection_files = list(annotations_dir.glob(det_pattern.name))
+
+    detection_results = []
+    for file_path in detection_files:
+        df = process_file(
+            file_path=file_path,
+            truth_column="is_moderator",
+            pred_column="response",
+            metric_type="detection",
+        )
+        detection_results.append(df)
+
+    final_det_df = pd.concat(detection_results, ignore_index=True)
+    final_det_df.to_csv(output_dir / "detection_metrics.csv", index=False)
+    plot_combined_llm_histogram(
+        detection_files, graph_dir, task_name="detection"
+    )
 
 
 def extract_number_or_nan(item):
@@ -56,19 +108,19 @@ def calculate_metrics(y_true: pd.Series, y_pred: pd.Series) -> dict:
     y_pred_clean = df["y_pred"].astype(int)
 
     try:
-        precision = precision_score(
+        precision = sklearn.metrics.precision_score(
             y_true_clean,
             y_pred_clean,
             average="binary",
             zero_division=0,  # type: ignore
         )
-        recall = recall_score(
+        recall = sklearn.metrics.recall_score(
             y_true_clean,
             y_pred_clean,
             average="binary",
             zero_division=0,  # type: ignore
         )
-        f1 = f1_score(
+        f1 = sklearn.metrics.f1_score(
             y_true_clean,
             y_pred_clean,
             average="binary",
@@ -155,44 +207,82 @@ def process_file(
     return pd.DataFrame(results_rows)
 
 
-def process_all_files(annotations_dir: Path, output_dir: Path):
-    # ---- PREDICTION ----
-    pred_pattern = annotations_dir / "llm_intervention_*_timing_prediction.csv"
-    prediction_files = list(annotations_dir.glob(pred_pattern.name))
+def plot_combined_llm_histogram(
+    files: list[Path],
+    output_dir: Path,
+    task_name: str,
+) -> None:
+    """
+    Creates a single histogram for all models, styled consistently with other plots.
+    Uses raw counts (not density).
+    """
+    sns.set(style="whitegrid")
 
-    prediction_results = []
-    for file_path in prediction_files:
-        df = process_file(
-            file_path=file_path,
-            truth_column="should_intervene",
-            pred_column="response",
-            metric_type="prediction",
-        )
-        prediction_results.append(df)
+    rows = []
 
-    if prediction_results:
-        final_pred_df = pd.concat(prediction_results, ignore_index=True)
-        final_pred_df.to_csv(
-            output_dir / "prediction_metrics.csv", index=False
-        )
+    for file_path in files:
+        base_name = file_path.stem
+        model_identifier = base_name.split("_")[2]
 
-    # ---- DETECTION ----
-    det_pattern = annotations_dir / "llm_intervention_*_timing_detection.csv"
-    detection_files = list(annotations_dir.glob(det_pattern.name))
+        df = pd.read_csv(file_path)
 
-    detection_results = []
-    for file_path in detection_files:
-        df = process_file(
-            file_path=file_path,
-            truth_column="is_moderator",
-            pred_column="response",
-            metric_type="detection",
-        )
-        detection_results.append(df)
+        extracted = df["response"].apply(extract_number_or_nan)
+        extracted = extracted.dropna()
+        extracted = extracted[extracted.isin([1, 2, 3, 4, 5])]
 
-    if detection_results:
-        final_det_df = pd.concat(detection_results, ignore_index=True)
-        final_det_df.to_csv(output_dir / "detection_metrics.csv", index=False)
+        for val in extracted:
+            rows.append(
+                {
+                    "model": model_identifier,
+                    "response": val,
+                }
+            )
+
+    if not rows:
+        print(f"[info] No valid data for {task_name} histogram.")
+        return
+
+    plot_df = pd.DataFrame(rows)
+
+    # --- consistent ordering + palette ---
+    hue_order = sorted(plot_df["model"].unique())
+    #palette = {m: MODEL_COLOR.get(m, "#888888") for m in hue_order}
+
+    plt.figure(figsize=(8, 5))
+
+    ax = sns.histplot(
+        data=plot_df,
+        x="response",
+        hue="model",
+        bins=[0.5, 1.5, 2.5, 3.5, 4.5, 5.5],
+        discrete=True,
+        multiple="stack",  # keep stacked style
+        hue_order=hue_order,
+        #palette=palette,
+    )
+
+    # --- hatching ---
+    #apply_hatches_to_histplot(ax, hue_order)
+
+    # --- axis formatting ---
+    ax.set_xticks([1, 2, 3, 4, 5])
+    ax.set_xticklabels(["1", "2", "3", "4", "5"])
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    plt.xlabel("LLM Response (1–5)")
+    plt.ylabel("Count")
+    plt.title(f"LLM Response Distribution – {task_name.capitalize()}")
+
+    # --- legend ---
+    #grouped_legend(ax, set(hue_order))
+
+    plt.tight_layout()
+
+    out_path = output_dir / f"combined_{task_name}_histogram.png"
+    util.graphs.save_plot(out_path)
+    plt.close()
 
 
 if __name__ == "__main__":
@@ -209,6 +299,11 @@ if __name__ == "__main__":
         ),
     )
     parser.add_argument(
+        "--graph-dir",
+        required=True,
+        help="Directory where the graphs will be exported to.",
+    )
+    parser.add_argument(
         "--output-dir",
         type=str,
         help=(
@@ -218,10 +313,8 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-
-    annotations_path = Path(args.annotation_dir)
-    output_dir = Path(args.output_dir)
-
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    process_all_files(annotations_path, output_dir)
+    main(
+        Path(args.annotation_dir),
+        Path(args.output_dir),
+        Path(args.graph_dir),
+    )

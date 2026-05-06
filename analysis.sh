@@ -12,7 +12,8 @@ python src/dataset_analysis.py \
 
 python src/llm_test.py \
     --annotation-dir data/llm_output \
-    --output-dir data/llm_output
+    --output-dir data/llm_output \
+    --graph-dir graphs
 
 python src/trans_analysis.py \
     --input-dir data/trans_results/prediction \
