@@ -2,7 +2,7 @@ logs*/
 checkpoints/
 reinforcement_annotation/
 pefk.csv
-all_annotations.csv
+data/annotation_output
 data/trans_input/
 data/llm_input/prediction/
 data/llm_input/detection/

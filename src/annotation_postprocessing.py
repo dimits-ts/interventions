@@ -3,7 +3,6 @@ import re
 from pathlib import Path
 
 import pandas as pd
-import numpy as np
 
 ANNOTATION_COLS = [
     "positive_reinforcement",
@@ -15,9 +14,11 @@ ANNOTATION_COLS = [
 def main(
     human_dir: Path,
     llm_dir: Path,
-    output_path: Path,
+    output_dir: Path,
     text_file: Path,
 ) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     human_dfs = load_human_annotations(human_dir)
     human_dfs = {
         f"A{i+1}": df for i, (_, df) in enumerate(sorted(human_dfs.items()))
@@ -27,6 +28,14 @@ def main(
         [k for k, _ in sorted(load_human_annotations(human_dir).items())],
     ):
         print(f"  {alias} -> {real}")
+
+    build_self_consistency_df(human_dfs, output_dir)
+
+    for key in human_dfs:
+        df = human_dfs[key]
+        human_dfs[key] = df.drop_duplicates(subset="conv_id").reset_index(
+            drop=True
+        )
 
     llm_dual_dfs = load_llm_dual_annotations(llm_dir)
     llm_single_dfs = load_llm_single_annotations(llm_dir)
@@ -49,11 +58,10 @@ def main(
     output_df = output_df.set_index("conv_id")
     print_coverage(output_df)
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_df.to_csv(output_path)
+    output_df.to_csv(output_dir / "all_annotations.csv")
     print(
         f"Wrote {len(output_df)} rows x {len(output_df.columns)}"
-        f" columns -> {output_path}"
+        f" columns -> {output_dir}"
     )
 
 
@@ -90,7 +98,6 @@ def load_human_annotations(directory: Path) -> dict[str, pd.DataFrame]:
             print(
                 f"[warn] {key!r} has duplicate conv_ids: {dupes[:10]}. Keeping first."
             )
-            df = df.drop_duplicates(subset="conv_id")
         dfs[key] = df.sort_values("conv_id").reset_index(drop=True)
 
     return dfs
@@ -303,17 +310,52 @@ def print_coverage(df: pd.DataFrame) -> None:
         print(f"  {count} annotator(s): {freq} ({freq/n:.1%})")
 
 
+def build_self_consistency_df(
+    dfs: dict[str, pd.DataFrame],
+    output_dir: Path,
+) -> None:
+    """
+    Extract duplicate conv_id rows per annotator to assess self-consistency.
+    Saves a combined dataframe to disk.
+    """
+    all_dupes = []
+
+    for annotator, df in dfs.items():
+        dupes = df[df["conv_id"].duplicated(keep=False)].copy()
+        if dupes.empty:
+            continue
+
+        dupes.insert(0, "annotator", annotator)
+        all_dupes.append(dupes)
+
+    if not all_dupes:
+        print(
+            "[info] No duplicate conv_ids found for self-consistency analysis."
+        )
+        return
+
+    consistency_df = pd.concat(all_dupes, ignore_index=True)
+
+    out_file = output_dir / "self_consistency_duplicates.csv"
+    consistency_df.to_csv(out_file, index=False)
+
+    print(
+        f"Wrote self-consistency dataframe with {len(consistency_df)} rows "
+        f"-> {out_file}"
+    )
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--human-annotation-dir", required=True)
     parser.add_argument("--llm-annotation-dir", required=True)
-    parser.add_argument("--output-path", required=True)
+    parser.add_argument("--output-dir", required=True)
     parser.add_argument("--text-file", default=None)
     args = parser.parse_args()
 
     main(
         human_dir=Path(args.human_annotation_dir),
         llm_dir=Path(args.llm_annotation_dir),
-        output_path=Path(args.output_path),
+        output_dir=Path(args.output_dir),
         text_file=Path(args.text_file) if args.text_file else None,
     )
