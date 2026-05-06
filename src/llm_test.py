@@ -29,39 +29,62 @@ def calculate_metrics(y_true: pd.Series, y_pred: pd.Series) -> dict:
             "Support": 0,
         }
 
-    try:
-        # Fill NaN predictions with 0 before scoring to avoid ValueError
-        y_pred_safe = y_pred.fillna(0).astype(int)
+    # Combine to ensure aligned filtering
+    df = pd.DataFrame({"y_true": y_true, "y_pred": y_pred})
 
+    initial_len = len(df)
+
+    # Keep only valid binary rows (0 or 1)
+    df = df.dropna()
+    df = df[df["y_true"].isin([0, 1]) & df["y_pred"].isin([0, 1])]
+
+    dropped = initial_len - len(df)
+    if dropped > 0:
+        print(
+            f"[info] Dropped {dropped} invalid rows before metric calculation."
+        )
+
+    if df.empty:
+        return {
+            "Precision": float("nan"),
+            "Recall": float("nan"),
+            "F1-Score": float("nan"),
+            "Support": 0,
+        }
+
+    y_true_clean = df["y_true"].astype(int)
+    y_pred_clean = df["y_pred"].astype(int)
+
+    try:
         precision = precision_score(
-            y_true,
-            y_pred_safe,
+            y_true_clean,
+            y_pred_clean,
             average="binary",
             zero_division=0,  # type: ignore
         )
         recall = recall_score(
-            y_true,
-            y_pred_safe,
+            y_true_clean,
+            y_pred_clean,
             average="binary",
             zero_division=0,  # type: ignore
         )
         f1 = f1_score(
-            y_true,
-            y_pred_safe,
+            y_true_clean,
+            y_pred_clean,
             average="binary",
             zero_division=0,  # type: ignore
         )
-        support = len(y_true)
+        support = len(y_true_clean)
     except ValueError as e:
         print(
-            f"Error during metric calculation: {e}. Check if input series "
-            "contain only binary values."
+            f"Error during metric calculation: {e}. "
+            "Check if input series contain only binary values."
         )
         return {
             "Precision": float("nan"),
             "Recall": float("nan"),
             "F1-Score": float("nan"),
-            "Support": sum(y_true),
+            "Support": int(y_true_clean.sum()),
         }
 
     return {
