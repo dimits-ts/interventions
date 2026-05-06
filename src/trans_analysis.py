@@ -19,11 +19,6 @@ def main(input_dir: Path, graph_dir: Path, tables_dir: Path):
             plot_metrics(curves_df)
             util.graphs.save_plot(graph_dir / f"pr_curves_{entry.name}.png")
 
-            results_df = pd.read_csv(entry / "res_dataset.csv")
-            export_results(
-                df=results_df, filepath=tables_dir / f"{entry.name}.tex"
-            )
-
 
 def plot_metrics(df):
     sns.set_theme(style="whitegrid")
@@ -73,48 +68,12 @@ def plot_metrics(df):
     # Clean legend
     legend = ax.get_legend()
     if legend is not None:
-        legend.set_title(None) # type: ignore
+        legend.set_title(None)  # type: ignore
 
     sns.despine()
     plt.tight_layout()
 
     return ax
-
-
-def export_results(
-    df: pd.DataFrame, filepath: Path, float_format: str = "%.3f"
-) -> None:
-    """
-    Export a DataFrame to a LaTeX table using booktabs.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        DataFrame with columns like ['dataset', 'precision', 'recall', 'f1',
-        'support']
-    filepath : str or None
-        If provided, saves the LaTeX to this file. Otherwise returns the string
-    float_format : str
-        Format for floating point numbers (default: 3 decimals)
-
-    Returns
-    -------
-    str (if filepath is None)
-    """
-    split = filepath.stem
-    df.to_latex(
-        index=False,
-        float_format=float_format,
-        bold_rows=False,
-        longtable=False,
-        escape=False,
-        caption=f"Classifier performance trained on {split} datasets",
-        label=f"tab:metrics_{split}",
-        column_format="lrrrr",
-        na_rep="",
-        buf=filepath,
-        position="t",
-    )
 
 
 if __name__ == "__main__":
