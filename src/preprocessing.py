@@ -8,7 +8,7 @@ import util.io
 import util.classification
 
 
-NUM_LLM_SAMPLES = 1000
+NUM_LLM_SAMPLES = 2000
 
 
 def main(
@@ -85,9 +85,37 @@ def llm_test_subset(
     max_length_chars: int = 3000,
     max_context_turns: int = 3,
 ) -> pd.DataFrame:
-    sampled = test_df.sample(
-        n=min(n, len(test_df)), random_state=util.classification.SEED
-    ).reset_index(drop=True)
+    # Get unique datasets
+    datasets = test_df["dataset"].unique()
+    k = len(datasets)
+
+    # Number of samples per dataset (equal split)
+    per_group = n // k
+
+    sampled = (
+        test_df.groupby("dataset", group_keys=False)
+        .apply(
+            lambda x: x.sample(
+                n=min(len(x), per_group), random_state=util.classification.SEED
+            )
+        )
+        .reset_index(drop=True)
+    )
+
+    # If we are short due to small groups, top up randomly
+    if len(sampled) < n:
+        remaining = n - len(sampled)
+        extra = test_df.drop(sampled.index, errors="ignore").sample(
+            n=remaining, random_state=util.classification.SEED
+        )
+        sampled = pd.concat([sampled, extra]).reset_index(drop=True)
+
+    # If somehow over (rare), trim
+    if len(sampled) > n:
+        sampled = sampled.sample(
+            n=n, random_state=util.classification.SEED
+        ).reset_index(drop=True)
+
     id2row = full_df.set_index("message_id").to_dict("index")
 
     sampled["sequence"] = [
@@ -96,7 +124,12 @@ def llm_test_subset(
         )
         for i in range(len(sampled))
     ]
+
     sampled = sampled.rename({"sequence": "discussion"}, axis=1)
+
+    print("Sample counts by dataset:")
+    print(sampled["dataset"].value_counts())
+
     return sampled
 
 
