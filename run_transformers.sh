@@ -21,18 +21,17 @@ run_experiment () {
     touch "$LOG_FILE"
 
     echo "==== $TASK ===="
-    python src/preprocessing.py \
-        --dataset-path=$DATASET_PATH \
-        --trans-output-dir=${TRAIN_VAL_TEST_SPLITS_PATH}/${TASK} \
-        --llm-output-dir=${LLM_TEST_PATH}/${TASK}\
-        --target-label=$TARGET
-    return
+    #python src/preprocessing.py \
+    #    --dataset-path=$DATASET_PATH \
+    #    --trans-output-dir=${TRAIN_VAL_TEST_SPLITS_PATH}/${TASK} \
+    #    --llm-output-dir=${LLM_TEST_PATH}/${TASK}\
+    #    --target-label=$TARGET
 
 
     for SPLIT in written spoken all; do
         SPLIT_INPUT_DIR=${TRAIN_VAL_TEST_SPLITS_PATH}/${TASK}
 
-        python src/trans_train.py \
+            python src/trans_train.py \
             --full-df=$DATASET_PATH \
             --splits-input-dir=$SPLIT_INPUT_DIR \
             --output-dir=checkpoints/${TASK}/${SPLIT} \

@@ -155,7 +155,7 @@ def res_df_from_logits_and_labels(
         y_true = group[label_column].astype(int).values  # <-- cast to int
         y_pred = group["pred"].astype(int).values  # <-- cast to int
 
-        precision, recall, f1, _ = (
+        precision, recall, f1_pos, _ = (
             sklearn.metrics.precision_recall_fscore_support(
                 y_true,
                 y_pred,
@@ -164,12 +164,20 @@ def res_df_from_logits_and_labels(
         )
         # count of positive examples, since NaNs invalidate the sum for sklearn
         support = int(y_true.sum())
+        f1_neg = sklearn.metrics.f1_score(
+            y_true,
+            y_pred,
+            average="binary",
+            pos_label=0,
+            zero_division=0,
+        )
         rows.append(
             {
                 "Dataset": name,
                 "Precision": precision,
                 "Recall": recall,
-                "F1": f1,
+                "F1p": f1_pos,
+                "F1n": f1_neg,
                 "Support": support,
             }
         )
