@@ -17,4 +17,4 @@ The label should never depend on whether you personally agree with the comment. 
 Apply the same standards across all comments. Avoid guessing or over-interpreting; use what is present in the text.
 
 ## Output
-Respond whether the comment you are reading (TGT) is a comment made by a moderator/facilitator on a scale of 1-5, where 1 is "Im sure it was not made by a moderator/facilitator", and 5 is "I'm sure it was made by a moderator/facilitator." Answer with a single number, and nothing else.
+Respond whether the comment you are reading (TGT) is a comment made by a moderator/facilitator. Write 0 if it was not made by a facilitator, and 1 if it was made by a facilitator. Do not write anything else, only the number.

@@ -17,4 +17,4 @@ The label should never depend on whether you personally agree with the comment. 
 Apply the same standards across all comments. Avoid guessing or over-interpreting; use what is present in the text.
 
 ## Output
-Respond whether you would intervene in this discussion as a facilitator on a scale of 1-5, where 1 is "Im sure I don't need to intervene", and 5 is "I'm sure I need to intervene". Answer with a single number, and nothing else.
+Respond whether you would intervene in this discussion as a facilitator. Write 0 if you would not intrevene, and 1 if you would. Do not write anything else, only the number.

@@ -1,10 +1,8 @@
 import argparse
-import re
 from pathlib import Path
 
 import sklearn.metrics
 import pandas as pd
-import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
@@ -27,14 +25,20 @@ def main(annotations_dir: Path, output_dir: Path, graph_dir: Path):
             file_path=file_path,
             truth_column="should_intervene",
             pred_column="response",
-            metric_type="prediction",
         )
+        df = df[df.Dataset != "umod"]
         prediction_results.append(df)
 
     final_pred_df = pd.concat(prediction_results, ignore_index=True)
-    final_pred_df.to_csv(output_dir / "prediction_metrics.csv", index=False)
-    plot_combined_llm_histogram(
-        prediction_files, graph_dir, task_name="prediction"
+    final_pred_df.to_csv(
+        output_dir / "prediction_metrics.csv",
+        index=False,
+    )
+
+    plot_combined_llm_barplot(
+        prediction_files,
+        graph_dir,
+        task_name="prediction",
     )
 
     # ---- DETECTION ----
@@ -47,29 +51,71 @@ def main(annotations_dir: Path, output_dir: Path, graph_dir: Path):
             file_path=file_path,
             truth_column="is_moderator",
             pred_column="response",
-            metric_type="detection",
         )
         detection_results.append(df)
 
     final_det_df = pd.concat(detection_results, ignore_index=True)
-    final_det_df.to_csv(output_dir / "detection_metrics.csv", index=False)
-    plot_combined_llm_histogram(
-        detection_files, graph_dir, task_name="detection"
+    final_det_df.to_csv(
+        output_dir / "detection_metrics.csv",
+        index=False,
+    )
+
+    plot_combined_llm_barplot(
+        detection_files,
+        graph_dir,
+        task_name="detection",
     )
 
 
-def extract_number_or_nan(item):
+def normalize_binary_response(item):
+    """
+    Converts model responses into binary labels:
+    0 = No
+    1 = Yes
+
+    Supports:
+    - integers/floats
+    - strings like:
+        "0", "1"
+        "yes", "no"
+        "true", "false"
+    """
+
+    if pd.isna(item):
+        return None
+
+    # numeric
     if isinstance(item, (int, float)):
-        return int(item) if isinstance(item, int) else int(float(item))
+        value = int(item)
+        if value in [0, 1]:
+            return value
+        return None
 
+    # string
     if isinstance(item, str):
-        match = re.search(r"(\d+)", item)
-        if match:
-            return int(match.group(1))
-        else:
-            return np.nan
+        cleaned = item.strip().lower()
 
-    return np.nan
+        yes_values = {
+            "1",
+            "yes",
+            "y",
+            "true",
+        }
+
+        no_values = {
+            "0",
+            "no",
+            "n",
+            "false",
+        }
+
+        if cleaned in yes_values:
+            return 1
+
+        if cleaned in no_values:
+            return 0
+
+    return None
 
 
 def calculate_metrics(y_true: pd.Series, y_pred: pd.Series) -> dict:
@@ -77,72 +123,87 @@ def calculate_metrics(y_true: pd.Series, y_pred: pd.Series) -> dict:
         return {
             "Precision": float("nan"),
             "Recall": float("nan"),
-            "F1-Score": float("nan"),
+            "F1p": float("nan"),
+            "Accuracy": float("nan"),
             "Support": 0,
         }
 
-    # Combine to ensure aligned filtering
-    df = pd.DataFrame({"y_true": y_true, "y_pred": y_pred})
+    df = pd.DataFrame(
+        {
+            "y_true": y_true,
+            "y_pred": y_pred,
+        }
+    )
 
     initial_len = len(df)
 
-    # Keep only valid binary rows (0 or 1)
     df = df.dropna()
     df = df[df["y_true"].isin([0, 1]) & df["y_pred"].isin([0, 1])]
 
     dropped = initial_len - len(df)
+
     if dropped > 0:
         print(
-            f"[info] Dropped {dropped} invalid rows before metric calculation."
+            f"[info] Dropped {dropped} invalid rows before "
+            "metric calculation."
         )
 
     if df.empty:
         return {
             "Precision": float("nan"),
             "Recall": float("nan"),
-            "F1-Score": float("nan"),
+            "F1p": float("nan"),
+            "Accuracy": float("nan"),
             "Support": 0,
         }
 
     y_true_clean = df["y_true"].astype(int)
     y_pred_clean = df["y_pred"].astype(int)
 
-    try:
-        precision = sklearn.metrics.precision_score(
-            y_true_clean,
-            y_pred_clean,
-            average="binary",
-            zero_division=0,  # type: ignore
-        )
-        recall = sklearn.metrics.recall_score(
-            y_true_clean,
-            y_pred_clean,
-            average="binary",
-            zero_division=0,  # type: ignore
-        )
-        f1 = sklearn.metrics.f1_score(
-            y_true_clean,
-            y_pred_clean,
-            average="binary",
-            zero_division=0,  # type: ignore
-        )
-        support = len(y_true_clean)
-    except ValueError as e:
-        print(
-            f"Error during metric calculation: {e}. "
-            "Check if input series contain only binary values."
-        )
-        return {
-            "Precision": float("nan"),
-            "Recall": float("nan"),
-            "F1-Score": float("nan"),
-            "Support": int(y_true_clean.sum()),
-        }
+    precision = sklearn.metrics.precision_score(
+        y_true_clean,
+        y_pred_clean,
+        average="binary",
+        pos_label=1,
+        zero_division=0,
+    )
+
+    recall = sklearn.metrics.recall_score(
+        y_true_clean,
+        y_pred_clean,
+        average="binary",
+        pos_label=1,
+        zero_division=0,
+    )
+
+    f1_pos = sklearn.metrics.f1_score(
+        y_true_clean,
+        y_pred_clean,
+        average="binary",
+        pos_label=1,
+        zero_division=0,
+    )
+    f1_neg = sklearn.metrics.f1_score(
+        y_true_clean,
+        y_pred_clean,
+        average="binary",
+        pos_label=0,
+        zero_division=0,
+    )
+
+    accuracy = sklearn.metrics.accuracy_score(
+        y_true_clean,
+        y_pred_clean,
+    )
+
+    support = len(y_true_clean)
 
     return {
         "Precision": precision,
         "Recall": recall,
-        "F1-Score": f1,
+        "F1p": f1_pos,
+        "F1n": f1_neg,
+        "Accuracy": accuracy,
         "Support": support,
     }
 
@@ -151,7 +212,6 @@ def process_file(
     file_path: Path,
     truth_column: str,
     pred_column: str,
-    metric_type: str,
 ) -> pd.DataFrame:
     base_name = file_path.stem
     model_identifier = base_name.split("_")[2]
@@ -160,17 +220,10 @@ def process_file(
 
     results_rows = []
 
-    all_y_true = []
-    all_y_pred = []
-
     for dataset_name, group_df in df.groupby("dataset"):
         y_true = group_df[truth_column]
 
-        extracted_preds = group_df[pred_column].apply(extract_number_or_nan)
-        y_pred = (extracted_preds >= 3).astype(int)
-
-        all_y_true.append(y_true)
-        all_y_pred.append(y_pred)
+        y_pred = group_df[pred_column].apply(normalize_binary_response)
 
         metrics = calculate_metrics(y_true, y_pred)
 
@@ -180,42 +233,44 @@ def process_file(
                 "Dataset": dataset_name,
                 "Precision": metrics["Precision"],
                 "Recall": metrics["Recall"],
-                "F1-Score": metrics["F1-Score"],
+                "F1p": metrics["F1p"],
+                "F1n": metrics["F1n"],
+                "Accuracy": metrics["Accuracy"],
                 "Support": metrics["Support"],
             }
         )
 
-    # ---- OVERALL (MACRO) ROW ----
+    # ---- OVERALL MACRO ROW ----
     if results_rows:
         df_results = pd.DataFrame(results_rows)
-
-        macro_precision = df_results["Precision"].mean()
-        macro_recall = df_results["Recall"].mean()
-        macro_f1 = df_results["F1-Score"].mean()
-        total_support = df_results["Support"].sum()
 
         results_rows.append(
             {
                 "Model": model_identifier,
                 "Dataset": "All",
-                "Precision": macro_precision,
-                "Recall": macro_recall,
-                "F1-Score": macro_f1,
-                "Support": total_support,
+                "Precision": df_results["Precision"].mean(),
+                "Recall": df_results["Recall"].mean(),
+                "F1p": df_results["F1p"].mean(),
+                "F1n": df_results["F1n"].mean(),
+                "Accuracy": df_results["Accuracy"].mean(),
+                "Support": df_results["Support"].sum(),
             }
         )
+
     return pd.DataFrame(results_rows)
 
 
-def plot_combined_llm_histogram(
+def plot_combined_llm_barplot(
     files: list[Path],
     output_dir: Path,
     task_name: str,
 ) -> None:
     """
-    Creates a single histogram for all models, styled consistently with other plots.
-    Uses raw counts (not density).
+    Creates a grouped count plot for binary responses:
+    0 = No
+    1 = Yes
     """
+
     sns.set(style="whitegrid")
 
     rows = []
@@ -226,11 +281,11 @@ def plot_combined_llm_histogram(
 
         df = pd.read_csv(file_path)
 
-        extracted = df["response"].apply(extract_number_or_nan)
-        extracted = extracted.dropna()
-        extracted = extracted[extracted.isin([1, 2, 3, 4, 5])]
+        responses = df["response"].apply(normalize_binary_response)
 
-        for val in extracted:
+        responses = responses.dropna()
+
+        for val in responses:
             rows.append(
                 {
                     "model": model_identifier,
@@ -239,80 +294,71 @@ def plot_combined_llm_histogram(
             )
 
     if not rows:
-        print(f"[info] No valid data for {task_name} histogram.")
+        print(f"[info] No valid data for {task_name} graph.")
         return
 
     plot_df = pd.DataFrame(rows)
 
-    # --- consistent ordering + palette ---
-    hue_order = sorted(plot_df["model"].unique())
-    #palette = {m: MODEL_COLOR.get(m, "#888888") for m in hue_order}
+    plt.figure(figsize=(7, 5))
 
-    plt.figure(figsize=(8, 5))
-
-    ax = sns.histplot(
+    ax = sns.countplot(
         data=plot_df,
         x="response",
         hue="model",
-        bins=[0.5, 1.5, 2.5, 3.5, 4.5, 5.5],
-        discrete=True,
-        multiple="stack",  # keep stacked style
-        hue_order=hue_order,
-        #palette=palette,
     )
 
-    # --- hatching ---
-    #apply_hatches_to_histplot(ax, hue_order)
-
-    # --- axis formatting ---
-    ax.set_xticks([1, 2, 3, 4, 5])
-    ax.set_xticklabels(["1", "2", "3", "4", "5"])
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(["No (0)", "Yes (1)"])
 
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
 
-    plt.xlabel("LLM Response (1–5)")
+    plt.xlabel("LLM Response")
     plt.ylabel("Count")
-    plt.title(f"LLM Response Distribution – {task_name.capitalize()}")
-
-    # --- legend ---
-    #grouped_legend(ax, set(hue_order))
+    plt.title(
+        f"LLM Binary Response Distribution – " f"{task_name.capitalize()}"
+    )
 
     plt.tight_layout()
 
-    out_path = output_dir / f"combined_{task_name}_histogram.png"
+    out_path = output_dir / f"combined_{task_name}_responses.png"
+
     util.graphs.save_plot(out_path)
+
     plt.close()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Calculate classification metrics (Precision, Recall, F1) "
-        "for LLM intervention timing data using pathlib."
+        description=(
+            "Calculate binary classification metrics "
+            "(Precision, Recall, F1, Accuracy) "
+            "for LLM intervention data."
+        )
     )
+
     parser.add_argument(
         "--annotation-dir",
         type=str,
-        help=(
-            "The directory containing the CSV files "
-            "(e.g., 'data/annotations')."
-        ),
+        required=True,
+        help=("Directory containing annotation CSV files."),
     )
+
     parser.add_argument(
         "--graph-dir",
         required=True,
-        help="Directory where the graphs will be exported to.",
+        help="Directory where graphs will be saved.",
     )
+
     parser.add_argument(
         "--output-dir",
         type=str,
-        help=(
-            "The directory where the resulting metrics CSVs will be saved "
-            "(e.g., 'results')."
-        ),
+        required=True,
+        help=("Directory where metrics CSV files will be saved."),
     )
 
     args = parser.parse_args()
+
     main(
         Path(args.annotation_dir),
         Path(args.output_dir),
