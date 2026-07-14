@@ -86,3 +86,24 @@ for model_idx in "${!models[@]}"; do
         --truth_column=${TARGET_COLUMN} \
         --task_name=prediction
 done
+
+
+for model_idx in "${!models[@]}"; do
+    MOD_MODEL_URL="${models[$model_idx]}"
+    MOD_MODEL_PSEUDO="${pseudos[$model_idx]}"
+
+    PREDICTION_INSTRUCTIONS_DIR="data/llm_input/ablation_same"
+    OUTPUT_DIR="data/llm_output/ablation_same/${MOD_MODEL_PSEUDO}"
+    METRICS_DIR="data/llm_metrics/ablation_same/${MOD_MODEL_PSEUDO}"
+    GRAPH_DIR="data/llm_graphs/ablation_same/${MOD_MODEL_PSEUDO}"
+
+    mkdir -p "$OUTPUT_DIR"
+
+    run_task_ablation "prediction" "$PREDICTION_INSTRUCTIONS_DIR" "$OUTPUT_DIR"
+
+    python src/run_ablation_analysis.py \
+        --annotations_dir=${OUTPUT_DIR} \
+        --output_dir=${METRICS_DIR} \
+        --truth_column=${TARGET_COLUMN} \
+        --task_name=prediction
+done

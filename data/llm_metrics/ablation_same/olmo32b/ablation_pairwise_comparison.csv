@@ -1,0 +1,11 @@
+VariantA,VariantB,N,AgreementRate,b_A1_B0,c_A0_B1
+dual1,dual2,252,1.0,0,0
+dual1,dual3,252,1.0,0,0
+dual1,dual4,252,1.0,0,0
+dual1,dual5,252,1.0,0,0
+dual2,dual3,252,1.0,0,0
+dual2,dual4,252,1.0,0,0
+dual2,dual5,252,1.0,0,0
+dual3,dual4,252,1.0,0,0
+dual3,dual5,252,1.0,0,0
+dual4,dual5,252,1.0,0,0
