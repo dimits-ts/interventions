@@ -64,3 +64,5 @@ for model_idx in "${!models[@]}"; do
         --hf_model_url "$MOD_MODEL_URL" \
         --hf_model_name "$MOD_MODEL_PSEUDO"
 done
+
+python judgement_analysis.py --annotation-dir data/llm_output --graph-dir graphs
