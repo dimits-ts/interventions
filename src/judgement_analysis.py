@@ -64,7 +64,43 @@ TASKS = [
 ]
 
 JUDGEMENT_LABELS = {0: "No (0)", 1: "Yes (1)"}
-HUMAN_LABEL = "Human (ground truth)"
+HUMAN_LABEL = "Human"
+HUMAN_COLOR = "#000000"
+HUMAN_HATCH = ""
+
+
+def build_model_styles(models: list[str]) -> tuple[dict, dict]:
+    """
+    One color + one hatch per model, assigned once from a sorted, global
+    list of model names. Every plot in this script must build its
+    color/hatch maps by slicing *this* dict (never by re-deriving indices
+    locally), so a given model looks identical across every graph and task.
+
+    Index 0 of the palette/hatch lists is reserved for HUMAN_COLOR /
+    HUMAN_HATCH (see plot_llm_vs_human) and is skipped here so no model can
+    ever be assigned the same black / unhatched style as the human bars.
+    """
+    color = {
+        m: COLORBLIND_PALETTE[(i + 1) % len(COLORBLIND_PALETTE)]
+        for i, m in enumerate(models)
+    }
+    hatch = {m: HATCHES[(i + 1) % len(HATCHES)] for i, m in enumerate(models)}
+    return color, hatch
+
+
+def restyle_legend(ax, order: list[str], hatch_map: dict) -> None:
+    """
+    seaborn/matplotlib legend swatches are separate proxy artists that do
+    NOT inherit hatches set on the actual bar patches after the fact, so
+    the legend has to be re-stamped explicitly to stay visually consistent
+    with the bars it's labelling.
+    """
+    legend = ax.get_legend()
+    if legend is None:
+        return
+    for label, handle in zip(order, legend.legend_handles):
+        handle.set_hatch(hatch_map.get(label, ""))
+        handle.set_edgecolor("black")
 
 
 def discover_files(annotations_dir: Path, task_name: str) -> list[Path]:
@@ -107,87 +143,6 @@ def load_task_frames(
     return frames
 
 
-# ---------------------------------------------------------------------------
-# Graph 1: LLM judgement frequency by model and dataset
-# ---------------------------------------------------------------------------
-def plot_judgement_frequency(
-    frames: dict[str, pd.DataFrame], task_name: str, graph_dir: Path
-) -> None:
-    rows = []
-    for model, df in frames.items():
-        valid = df.dropna(subset=["response_binary"])
-        for dataset, judgement in zip(
-            valid["dataset"], valid["response_binary"]
-        ):
-            rows.append(
-                {
-                    "dataset": dataset,
-                    "model": model,
-                    "Judgement": JUDGEMENT_LABELS[int(judgement)],
-                }
-            )
-
-    if not rows:
-        print(
-            f"[info] No valid LLM responses for '{task_name}' frequency graph."
-        )
-        return
-
-    plot_df = pd.DataFrame(rows)
-
-    models = sorted(plot_df["model"].unique())
-    palette = {
-        m: COLORBLIND_PALETTE[i % len(COLORBLIND_PALETTE)]
-        for i, m in enumerate(models)
-    }
-    hatches = {m: HATCHES[i % len(HATCHES)] for i, m in enumerate(models)}
-    dataset_order = sorted(plot_df["dataset"].unique())
-
-    g = sns.catplot(
-        data=plot_df,
-        kind="count",
-        x="dataset",
-        hue="model",
-        col="Judgement",
-        order=dataset_order,
-        hue_order=models,
-        palette=palette,
-        col_order=["No (0)", "Yes (1)"],
-        height=5,
-        aspect=1.1,
-        legend_out=True,
-    )
-
-    for ax in g.axes.flat:
-        # seaborn gives one BarContainer per hue level (model), in hue_order;
-        # stamp every bar in that container with its model's hatch.
-        for model, container in zip(models, ax.containers):
-            for patch in container:
-                patch.set_hatch(hatches[model])
-                patch.set_edgecolor("black")
-
-        ax.set_xlabel("Dataset")
-        ax.set_ylabel("Count")
-        ax.tick_params(axis="x", rotation=45)
-        for label in ax.get_xticklabels():
-            label.set_ha("right")
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-
-    g.set_titles("LLM judgement: {col_name}")
-    g.fig.suptitle(
-        f"LLM Judgement Frequency by Model and Dataset – {task_name.capitalize()}",
-        y=1.05,
-    )
-
-    util.graphs.save_plot(
-        graph_dir / f"judgement_frequency_by_model_dataset_{task_name}.png"
-    )
-
-
-# ---------------------------------------------------------------------------
-# Graph 2: LLM vs human judgements by dataset
-# ---------------------------------------------------------------------------
 def compute_human_rates(frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
     """
     Pools the ground-truth column across every model's file (since they all
@@ -235,7 +190,12 @@ def compute_model_rates(frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
 
 
 def plot_llm_vs_human(
-    frames: dict[str, pd.DataFrame], task_name: str, graph_dir: Path
+    frames: dict[str, pd.DataFrame],
+    task_name: str,
+    graph_dir: Path,
+    model_color: dict,
+    model_hatch: dict,
+    title: str,
 ) -> None:
     if not frames:
         print(f"[info] No files for '{task_name}' human-vs-LLM graph.")
@@ -252,12 +212,13 @@ def plot_llm_vs_human(
     models = sorted(model_rates["judge"].unique())
     judge_order = [HUMAN_LABEL] + models
     dataset_order = sorted(plot_df["dataset"].unique())
+    plot_df.positive_rate = plot_df.positive_rate * 100
 
-    palette = {HUMAN_LABEL: "#000000"}
-    hatches = {HUMAN_LABEL: ""}
-    for i, m in enumerate(models):
-        palette[m] = COLORBLIND_PALETTE[(i + 1) % len(COLORBLIND_PALETTE)]
-        hatches[m] = HATCHES[(i + 1) % len(HATCHES)]
+    # Human always gets its own fixed black/unhatched style; every model
+    # reuses the exact color+hatch assigned to it in build_model_styles(),
+    # so it looks identical here and in the frequency graph above.
+    palette = {HUMAN_LABEL: HUMAN_COLOR, **{m: model_color[m] for m in models}}
+    hatches = {HUMAN_LABEL: HUMAN_HATCH, **{m: model_hatch[m] for m in models}}
 
     plt.figure(figsize=(9, 5.5))
     ax = sns.barplot(
@@ -276,17 +237,16 @@ def plot_llm_vs_human(
             patch.set_edgecolor("black")
 
     ax.set_xlabel("Dataset")
-    ax.set_ylabel("Positive judgement rate")
-    ax.set_ylim(0, 1)
+    ax.set_ylabel(r"\% Positive interventions")
+    ax.set_ylim(0, 100)
     ax.tick_params(axis="x", rotation=45)
     for label in ax.get_xticklabels():
         label.set_ha("right")
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    ax.set_title(
-        f"LLM vs Human Judgements by Dataset – {task_name.capitalize()}"
-    )
+    ax.set_title(title)
     ax.legend(bbox_to_anchor=(1.02, 1), loc="upper left", frameon=False)
+    restyle_legend(ax, judge_order, hatches)
 
     plt.tight_layout()
     util.graphs.save_plot(
@@ -301,8 +261,24 @@ def main(annotations_dir: Path, graph_dir: Path) -> None:
     util.graphs.seaborn_setup()
     graph_dir.mkdir(parents=True, exist_ok=True)
 
+    # Discover every model across every task first, so a model gets the
+    # exact same color+hatch everywhere, regardless of which task or which
+    # graph it happens to show up in.
+    task_files = {
+        task_name: discover_files(annotations_dir, task_name)
+        for task_name, _, _ in TASKS
+    }
+    all_models = sorted(
+        {
+            model_name_from_path(f)
+            for files in task_files.values()
+            for f in files
+        }
+    )
+    model_color, model_hatch = build_model_styles(all_models)
+
     for task_name, truth_column, exclude_datasets in TASKS:
-        files = discover_files(annotations_dir, task_name)
+        files = task_files[task_name]
         if not files:
             print(f"[info] No files found for task '{task_name}', skipping.")
             continue
@@ -310,8 +286,17 @@ def main(annotations_dir: Path, graph_dir: Path) -> None:
         print(f"\n=== {task_name} ({len(files)} model file(s)) ===")
         frames = load_task_frames(files, truth_column, exclude_datasets)
 
-        plot_judgement_frequency(frames, task_name, graph_dir)
-        plot_llm_vs_human(frames, task_name, graph_dir)
+        plot_llm_vs_human(
+            frames,
+            task_name,
+            graph_dir,
+            model_color,
+            model_hatch,
+            title=(
+                "Unlike humans, LLMs are influenced by discussion domain "
+                f"({task_name.capitalize()})."
+            ),
+        )
 
     print(f"\nAll graphs written to {graph_dir}")
 
