@@ -1,0 +1,28 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+
+\title{Revisions}
+
+
+\begin{document}
+	\maketitle	
+	
+	We thank the reviewers for their insight, engagement and recommendations for our work. Below is a list of all major changes from the previous submission cycle:
+	\begin{enumerate}
+		\item A formatting oversight on our part led to the accidental adoption of 10pt fontsize instead of the ACL standard of 11pt. The error has been corrected.
+		
+		\item \S5.3 from the previous draft has been moved to the Appendix, since both reviewers bRUY and hmYL understandably found it difficult to connect the experiment of facilitator detection with facilitator prediction. Ultimately, the task failed to sufficiently support our main findings concerning the latter to justify its position in the main text. 
+		
+		\item After a discussion with reviewer hmYL we also dropped the framing that facilitator detection functions as an upper-bound estimation for facilitator prediction. The task is now clearly marked as a Natural Language Understanding task, as mentioned in the previous manuscript.
+		
+		\item We added ablations both for instruction sensitivity (including prompts specifically mentioning that facilitator overreach should be treated as an important concern) and for LLM self-consistency after a recommendation of both reviewers bRUY and hmYL.
+		
+		\item We added additional information about the participants of the study and the experimental procedure (including pilot studies, interviews and meetings), as suggested by reviewer hmYL. We also motivated our decision to train the participants, after the recommendations of reviewer bRUY.
+		
+		\item We also release the full dataset including survey participants rationales as requested by reviewer hmYL and openly acknowledge in the Limitations that, with hindsight, we should have leaned more on these rationales while conducting the survey.
+		
+		\item We added an experiment showing that LLM facilitators may be systematically influenced by discussion domain, as hypothesized by reviewers bRUY and Wbzh.
+		
+		\item We added general clarifications for points raised by all reviewers.
+	\end{enumerate}
+\end{document}
