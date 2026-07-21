@@ -12,12 +12,16 @@ shopt -s nullglob   # so an unmatched *.md glob expands to nothing, not the lite
 # ---------------------------------------------------------------------------
 models=(
     "unsloth/OLMo-2-0325-32B-Instruct-unsloth-bnb-4bit"
+    "unsloth/Qwen2.5-32B-Instruct-bnb-4bit"
+    "unsloth/Llama-3.3-70B-Instruct-bnb-4bit"
     "unsloth/Olmo-3-7B-Instruct-unsloth-bnb-4bit"
     "unsloth/Qwen2.5-7B-Instruct-bnb-4bit"
     "unsloth/Meta-Llama-3.1-8B-Instruct-bnb-4bit"
 )
 pseudos=(
     "olmo32b"
+    "qwen32b"
+    "llama70b"
     "olmo7b"
     "qwen7b"
     "llama8b"

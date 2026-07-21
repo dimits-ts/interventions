@@ -1,0 +1,11 @@
+VariantA,VariantB,N,AgreementRate,b_A1_B0,c_A0_B1
+cautious1,cautious2,400,0.9775,4,5
+cautious1,concise,398,0.7713567839195979,68,23
+cautious1,descriptive,400,0.87,21,31
+cautious1,role,399,0.6641604010025063,129,5
+cautious2,concise,398,0.7839195979899497,66,20
+cautious2,descriptive,400,0.8625,23,32
+cautious2,role,399,0.6616541353383458,130,5
+concise,descriptive,398,0.7060301507537688,31,86
+concise,role,398,0.7713567839195979,85,6
+descriptive,role,399,0.6190476190476191,143,9

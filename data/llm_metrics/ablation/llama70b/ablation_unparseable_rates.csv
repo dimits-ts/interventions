@@ -1,0 +1,6 @@
+Variant,Total,Unparseable,UnparseableRate
+cautious1,400,0,0.0
+cautious2,400,0,0.0
+concise,400,92,0.23
+descriptive,400,5,0.0125
+role,400,164,0.41
