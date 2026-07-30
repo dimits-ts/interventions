@@ -18,8 +18,3 @@ We provide a conda environment with all dependencies in [`environment.yml`](envi
 * [Predicting when facilitators intervene](docs/intervention_detection.md)
 
 * [Analyzing facilitative taxonomies](docs/taxonomy_annotation.md)
-
-
-## Acknowledgements
-
-This work has been partially supported by project MIS 5154714 of the National Recovery and Resilience Plan Greece 2.0 funded by the European Union under the NextGenerationEU Program.
