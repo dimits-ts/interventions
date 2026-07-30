@@ -29,7 +29,7 @@
 \usepackage{siunitx}
 \usepackage{tabularx}
 \usepackage{ragged2e}
-\usepackage{soul} 
+\usepackage{soul}
 
 \newcommand{\explink}{\url{https://anonymous.4open.science/r/interventions-6053}}
 \newcommand{\datasetlink}{\url{https://anonymous.4open.science/r/facilitation-dataset-37DF}}
@@ -149,19 +149,23 @@
 		
 	\paragraph{Using models}
 	%While automated content moderation is widespread on social media platforms, automated facilitation is a topic currently exclusive to academic research~\cite{korre-etal-2025-evaluation}. 
-	The only work to our knowledge that has explicitly attempted to predict facilitative interventions~\citep{falk-etal-2021-predicting} uses \ac{eo} classifiers on a single dataset--\ac{ceri}~\citep{ceri}--with modest performance. Indeed, these classifiers have proven competent in the context of escalation prediction~\cite{cmv_awry2,Yuan_Singh_2023}, and facilitative tactics detection~\citep{chen-etal-2025-whow, schroeder-etal-2024-fora}. Recent work~\cite{schroeder-etal-2024-fora, chen-etal-2025-whow} uses LLM-as-a-judge models to annotate data in the field of facilitation, although recent research suggests that fully-automated facilitation is still out of our reach \cite{korre-etal-2025-evaluation}.
+	The only work to our knowledge that has explicitly attempted to predict facilitative interventions~\citep{falk-etal-2021-predicting} uses \ac{eo} classifiers on a single dataset--\acs{ceri}~\citep{ceri}--with modest performance. Indeed, these classifiers have proven competent in the context of escalation prediction~\cite{cmv_awry2,Yuan_Singh_2023}, and facilitative tactics detection~\citep{chen-etal-2025-whow, schroeder-etal-2024-fora}. Recent work~\cite{schroeder-etal-2024-fora, chen-etal-2025-whow} uses LLM-as-a-judge models to annotate data in the field of facilitation, although recent research suggests that fully-automated facilitation is still out of our reach \cite{korre-etal-2025-evaluation}.
 	
 	\paragraph{Using humans} 
 	Expert human facilitators are frequently used in research~\citep{chen-etal-2025-whow, ceri, schroeder-etal-2024-fora}, but this is not a scalable process due to costs~\citep{Rossi_Harrison_Shklovski_2024}.
 	
 	\paragraph{Ignoring it}
 	Most platforms hold users responsible for maintaining the quality of discussion and the enforcement of community and platform rules, especially in jurisdictions where the platforms themselves are largely absolved of the responsibility of posted content, such as the U.S.~\citep{seering_2020_selfmoderation, schaffner_community_guidelines}. In some cases, the users are responsible for just flagging and reporting content~\citep{seering_2020_selfmoderation}, while platforms like Reddit use volunteer moderators, who also function as community leaders and facilitators~\citep{seering_2020_selfmoderation, umod}, raising ethical questions about ``Moderation as Free Labor''~\citep{Matias2019TheCL}.
-	
-	
+
+    
 	\section{PEFK: A large, multi-domain facilitation dataset}
 	\label{sec:dataset}
+    
+	Since there is currently no dataset that explicitly concerns itself with facilitation interventions, we construct the ``\acf{pefk}'' dataset, a standardized, multi-domain compilation of the facilitation-related datasets listed by \citet{korre-etal-2025-evaluation} (see Table~\ref{tab:datasets}). \ac{pefk} contains data from both online forums and oral discussions, and standardizes metadata, metrics, and labeling schemes according to a simple, unified schema, making it suitable as a benchmark on facilitator interventions. More information on preprocessing steps and dataset schema can be found in App.~\ref{sec:app:dataset}.
 	
-	\begin{table*}[t]
+	\ac{pefk} is designed to facilitate exploration and analysis of facilitative interventions under all three definitions described in \S\ref{sec:related:interventions}. Specifically, we use a subset of the data that includes professional facilitation annotations (specifically \ac{wt}, \ac{ceri}, \ac{whow}, \ac{iq2}, but not \ac{umod}--see App.~\ref{sec:app:dataset:preprocessing} )  to train our models according to Def.~\ref{def:facilitator} in \S\ref{sec:facilitator} (see App.~\ref{sec:app:dataset:exploratory}; Fig.~\ref{fig:moderation-perc}). We also use a subset of \ac{pefk} to survey human facilitative patterns according to Def.~\ref{def:facilitative}. Finally, we include escalation and toxicity, as used in Def.~\ref{def:escalation}, although this information is not utilized in this study (see \S\ref{sec:related:interventions}).
+
+    \begin{table*}[t]
 		\centering
 		\small
 		\begin{tabularx}{\textwidth}{lccXXc}
@@ -181,10 +185,6 @@
 		\caption{The datasets used in \acs{pefk} include a large variety of domains, some crawled, and others as transcripts from oral discussions. All datasets include multi-participant discussions (besides UMOD which contains comment pairs). The \textbf{Fac.} column denotes whether information on which users are facilitators is available.}
 		\label{tab:datasets}
 	\end{table*}
-	
-	Since there is currently no dataset that explicitly concerns itself with facilitation interventions, we construct the ``\acf{pefk}'' dataset, a standardized, multi-domain compilation of the facilitation-related datasets listed by \citet{korre-etal-2025-evaluation} (see Table~\ref{tab:datasets}). \ac{pefk} contains data from both online forums and oral discussions, and standardizes metadata, metrics, and labeling schemes according to a simple, unified schema, making it suitable as a benchmark on facilitator interventions. More information on preprocessing steps and dataset schema can be found in App.~\ref{sec:app:dataset}.
-	
-	\ac{pefk} is designed to facilitate exploration and analysis of facilitative interventions under all three definitions described in \S\ref{sec:related:interventions}. Specifically, we use a subset of the data that includes professional facilitation annotations to train our models according to Def.~\ref{def:facilitator} in \S\ref{sec:facilitator} (see App.~\ref{sec:app:dataset:exploratory}; Fig.~\ref{fig:moderation-perc}). We also use a subset of \ac{pefk} to survey human facilitative patterns according to Def.~\ref{def:facilitative}. Finally, we include escalation and toxicity, as used in Def.~\ref{def:escalation}, although this information is not utilized in this study (see \S\ref{sec:related:interventions}).
 	
 	
 	\section{Do humans and LLMs intervene at similar circumstances?}
@@ -237,7 +237,7 @@
 	
 	\begin{figure}[!t]
 		\centering
-		\includegraphics[width=\linewidth]{histograms_certainty.png}
+		\includegraphics[width=\linewidth]{human_vs_llm_reinforcement.png}
 		\caption{Certainty of judgments per facilitation label. LLMs (orange bars on the right) are much more confident in their judgments than humans (high frequencies on the extreme modes i.e., 1 and 5).}
 		\label{fig:freqs_certainty}
 	\end{figure}
@@ -270,7 +270,7 @@
 	
 	\begin{figure}[!t]
 		\centering
-		\includegraphics[width=1\linewidth]{extremes_heatmap.png}
+		\includegraphics[width=1\linewidth]{extreme_cases_heatmap.pdf}
 		\caption{Top 5 discussion instances where the LLM majority vote disagrees with all human participants. The y-axis indicates the discussion instance index in the dataset. Labels follow the survey schema described in App.~\ref{sec:app:human-annotation:positive-vs-negative}: POS = Positive Reinforcement, NEG = Negative Reinforcement, BOTH = Both Positive and Negative Reinforcement, and NO = No Reinforcement.}
 		\label{fig:extremes_heatmap}
 	\end{figure}
@@ -589,7 +589,7 @@
 	
 	There currently exists a rift in facilitation research; while some previous work concerns itself with forums and online discussions~\citep{ceri}, others are exclusively focused on live, real-life, oral discussions~\citep{schroeder-etal-2024-fora, chen-etal-2025-whow}. This rift is an issue for facilitation research, since oral and online written discussions feature fundamentally different kinds of facilitation interventions, as shown by stark differences in proposed facilitation schemas between online forums~\citep{ceri}, and real-life discussions~\citep{schroeder-etal-2024-fora, chen-etal-2025-whow}. Additionally, the data themselves are different; posts and comments are self-contained, while transcripts regularly feature interruptions, participants talking in parallel (see App.~\ref{sec:app:dataset:exploratory}), and linguistic features that are necessary for coordination (e.g., ``Thank you.'', ``I agree.''). It is worth noting that in our case, all written discussions are asynchronous (the participants may join and leave at any time), while all oral discussions are synchronous (the participants are all active at the same time).
 	
-	Figure~\ref{fig:dataset-stats} shows some of the structural differences of oral and written datasets. oral datasets feature a significantly larger number of comments per discussion, since instances where the participants talk over each other, or interrupt the other are transcribed as separate comments. Additionally, oral datasets feature a large amount of comments with very few words, since a lot of utterances are short but necessary for social co-ordination (e.g., ``Thank you'', ``Yes'', ``I agree''). Figure~\ref{fig:moderation-perc} shows the percentage of comments made by facilitators for each of our datasets. In almost all datasets, a third of the comments are made by facilitators.\footnote{We do not include the UMOD dataset, since there is no established ground-truth (see App.~\ref{sec:app:dataset:preprocessing}).}
+	Figure~\ref{fig:dataset-stats} shows some of the structural differences of oral and written datasets. oral datasets feature a significantly larger number of comments per discussion, since instances where the participants talk over each other, or interrupt the other are transcribed as separate comments. Additionally, oral datasets feature a large amount of comments with very few words, since a lot of utterances are short but necessary for social co-ordination (e.g., ``Thank you'', ``Yes'', ``I agree''). Figure~\ref{fig:moderation-perc} shows the percentage of comments made by facilitators for each of our datasets. In almost all datasets, a third of the comments are made by facilitators.\footnote{We do not include the \ac{umod} dataset, since there is no established ground-truth (see App.~\ref{sec:app:dataset:preprocessing}).}
 	
 	\paragraph{Vocabulary discrepancies in PEFK datasets.}
 	We also the data to include only messages written by moderators, then cleaned the text by removing URLs, punctuation, and other noise. After preprocessing, we used a TF-IDF vectorization approach with n-grams (bigrams and trigrams) to extract phrases. Crucially, the TF-IDF model was trained on all datasets combined, so that common, generic phrases were downweighted while phrases that are more distinctive to each dataset were emphasized. We then computed the average TF-IDF score of each phrase within each dataset and selected the top-ranking ones as representative expressions of moderator language in that context. The results can be found in Figure~\ref{fig:pefk_words}.
@@ -777,12 +777,12 @@
 	
 	\begin{figure}[t]
 		\centering
-		\includegraphics[width=\columnwidth]{dataset_freqs.png}
+		\includegraphics[width=\columnwidth]{dataset_freqs.pdf}
 		\caption{Label distributions of human participants per dataset.}
 		\label{fig:label_distribution_dataset}
 	\end{figure}
 	
-	Facilitative tendencies generally follow a conservative pattern, with no reinforcement selected most often. Despite the differences between the datasets (forums, debates, and radio podcasts), we observe similar trends in the choice between positive and negative reinforcement, with positive reinforcement being more common overall. Two exceptions are cmv\_awry and wikiconv, where negative interventions are selected more often than positive ones, by 15\% and 1\%, respectively (Fig.~\ref{fig:label_distribution_dataset}).
+    Facilitative tendencies generally follow a conservative pattern, with no reinforcement selected most often. Despite the differences between the datasets (forums, debates, and radio podcasts), we observe similar trends in the choice between positive and negative reinforcement, with positive reinforcement being more common overall. Two exceptions are cmv\_awry and wikiconv, where negative interventions are selected more often than positive ones, by 3\% and 6\%, respectively, and ceri, where positive reinforcement is selected more often than no reinforcement (Fig.~\ref{fig:label_distribution_dataset}).
 	
 	
 	\subsection{Participant consistency}
@@ -823,7 +823,16 @@
 	
 	\paragraph{Selection} Participant selection required a response to the public call, followed by a round of interviews to verify that candidates fulfilled the criteria for the role. All successful participants held a BA in Languages, Communication, or History, and an MSc in either Digital Humanities or Language Technology. They also had experience with NLP annotation tasks, such as sentiment analysis and toxicity detection. We would also like to highlight that controls were conducted before the survey (hiring), during the survey (training and discussion), and after the survey (removal of outlier or inconsistent participants), to ensure the highest quality of results.
 	
-	\paragraph{Coordination} The coordination of the project was largely based on weekly meetings that allowed the integration of participant feedback and potential changes to our survey methodology. An overview of the project timeline can be found in Table~\ref{tab:timeline}. Before the commencement of the main survey, two crucial steps were carried out. The first was familiarizing participants with facilitation tactics; more information can be found in Section~\ref{sec:app:human-annotation:tactics}. The second was a pilot round with $\sim$160 instances, which allowed us to better understand the challenges of the task. For example, one major concern was time. Depending on instance length, labeling took between 2 and 5 minutes. This led us to break the task into smaller subtasks, spread across almost 3 months (see Phases 5 and 6 in Table~\ref{tab:timeline}), with annotators labeling about 400 instances per round.
+	\paragraph{Coordination} The coordination of the project was largely based on weekly meetings that allowed the integration of participant feedback and potential changes to our survey methodology. An overview of the project timeline can be found in Table~\ref{tab:timeline}. Before the commencement of the main survey, two important preparatory steps were carried out. The first was familiarizing participants with facilitation tactics; more information can be found in Section~\ref{sec:app:human-annotation:tactics}. 
+    
+    The second was a pilot round with $\sim$160 instances, which allowed us to better understand the challenges of the task. For example, one major concern was time. Depending on instance length, labeling took between 2 and 5 minutes. The pilot helped us pin down to how much time the annotators needed. This led us to break the task into smaller subtasks, spread across almost 3 months (see Phases 5 and 6 in Table~\ref{tab:timeline}), with annotators labeling about 400 instances per round. Moreover, during this pilot, the annotators noticed coding errors, as well as malformed instances, which we addressed by adding malformed-instance flagging as an option. Finally, the pilot helped us refine the definitions of positive and negative reinforcement. For example, how to handle `yes' as a comment, which we considered positive if it had a positive impact on the conversation and was not used merely as hedging. Figure~\ref{fig:instances_pilot} show the frequencies of each class on a likert scale for the pilot. Because of the malformed instances in the initial dataset, and because the task itself changed between the pilot and the final survey, the two are not directly comparable. We nevertheless release the raw pilot survey files in the Supporting Material.
+
+    \begin{figure*}
+        \centering
+        \includegraphics[width=1\linewidth]{reinforcement_frequency.png}
+        \caption{Frequencies of each reinforcement class on a Likert scale for the two pilot studies conducted before the main survey task.}
+        \label{fig:instances_pilot}
+    \end{figure*}
 	
 	\begin{table}[!t]
 		\centering
@@ -865,6 +874,7 @@
 	
 	\begin{table*}[t]
 		\centering
+        \small
 		\begin{tabular}{llcccccc}
 			\toprule
 			\textbf{Run A} & \textbf{Run B} & \textbf{LLaMa-70B} & \textbf{Qwen-32B} & \textbf{OLMo-32B} & \textbf{OLMo-7B} & \textbf{Qwen-7B} & \textbf{Llama-8B} \\
@@ -890,6 +900,7 @@
 	
 	\begin{table*}[t]
 		\centering
+        \small
 		\begin{tabular}{llcccccc}
 			\toprule
 			\textbf{Run A} & \textbf{Run B} & \textbf{LLaMa-70B} & \textbf{Qwen-32B}  & \textbf{OLMo-32B} & \textbf{OLMo-7B} & \textbf{Qwen-7B} & \textbf{Llama-8B} \\
@@ -917,6 +928,7 @@
 	Since comments in the written and oral datasets are fundamentally different (\S\ref{sec:app:dataset:exploratory}), we would be tempted to train different models for each. This decision is not obvious however, since it is likely that the model can internally distinguish between oral and written speech. If that occurs, the differences between the texts should not negatively affect the model; in fact, training the model on all datasets could allow it to transfer knowledge between the two text modalities. Table~\ref{tab:merged_metrics} shows the performance of the same model when trained only on oral and written datasets, compared to when trained on the all datasets at once. We find that the models perform better when trained on different splits.
 	
 	\begin{table}[ht]
+        \small
 		\centering
 		\begin{tabular}{lrrrr}
 			\toprule
@@ -946,7 +958,7 @@
 	
 	An advantage of using \ac{eo} classifiers instead of LLMs is that we can quantitatively alter the performance of the classifier by tuning the thresholds required for a comment to trigger an intervention. By making the model more conservative (increasing the threshold), we could hope that we can avoid unnecessary interventions, while making it less conservative (decreasing the threshold) we could make it more proactive.
 	
-	Fig.~\ref{fig:thresholds} shows that the classifier has an inherently low precision score which is largely invariant to the selected threshold. On the other hand, recall falls off rapidly, which incentivises us to use a more liberal approach.
+	Fig.~\ref{fig:thresholds} shows that the classifier has an inherently low precision score which is largely invariant to the selected threshold. On the other hand, recall falls off rapidly, which incentivizes us to use a more liberal approach.
 	
 	\begin{figure*}[t]
 		\includegraphics[width=\columnwidth]{pr_curves_written.png}

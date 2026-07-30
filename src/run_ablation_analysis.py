@@ -48,7 +48,7 @@ import pandas as pd
 import sklearn.metrics
 from scipy.stats import binomtest
 
- 
+
 REINFORCEMENT_PATTERNS = {
     "positive_reinforcement": r"Positive:\s*\[?(\d+)\]?",
     "negative_reinforcement": r"Negative:\s*\[?(\d+)\]?",
