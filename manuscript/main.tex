@@ -31,6 +31,7 @@
 \usepackage{ragged2e}
 \usepackage{soul}
 \usepackage{orcidlink}
+\usepackage[role = cardinal, grid = lightgrey]{credits}
 
 \newcommand{\explink}{\url{https://github.com/dimits-ts/interventions}}
 \newcommand{\datasetlink}{\url{https://github.com/dimits-ts/facilitation-dataset}}
@@ -38,6 +39,10 @@
 
 \newcommand{\cmark}{\ding{51}}
 \newcommand{\xmark}{\ding{55}}
+
+%CReDiT colors
+\definecolor{cardinal} {RGB}{196, 30, 58}
+\definecolor{lightgrey}{RGB}{150,150,150}
 
 \newcommand{\KKorcid}{\orcidlink{0000-0002-9349-9554}}
 \newcommand{\DTorcid}{\orcidlink{0000-0002-5675-3939}}
@@ -451,7 +456,14 @@
 	
 	\section*{Acknowledgments}
 	
+	\paragraph{Funding} This work has been partially supported by project MIS 5154714 of the National Recovery and Resilience Plan Greece 2.0 funded by the European Union under the NextGenerationEU Program.
 	
+	\paragraph{Contribution} We outline the contributions of each member of the research team below, according to the standardized CReDiT taxonomy \citep{credit}.
+	% CRediT
+	\credit{DT}{Conceptualization, Data curation, Methodology, Formal analysis, Investigation, Software, Visualization, Writing -- original draft, Writing -- review \& editing, Resources}
+	\credit{KK}{Conceptualization, Data curation, Methodology, Formal analysis, Investigation, Validation, Visualization, 	Writing -- original draft, Writing -- review \& editing}
+	\credit{JP}{Conceptualization, Funding acquisition, Methodology, Project administration, Supervision, Writing -- review \& editing}
+	\insertcredits
 	
 	\bibliography{refs}
 	\appendix
