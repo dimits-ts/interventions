@@ -29,7 +29,7 @@ python src/trans_analysis.py \
     --graph-dir graphs/detection \
     --tables-dir manuscript/generated/detection
 
-python judgement_analysis.py \
+python src/judgement_analysis.py \
     --annotation-dir data/llm_output \
     --graph-dir graphs \
     --cache-dir cache

@@ -146,7 +146,9 @@ def compute_model_rates(frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
     rows = []
     for model, df in frames.items():
         valid = df.dropna(subset=["response_binary"])
-        rates = valid.groupby("dataset")["response_binary"].mean().reset_index()
+        rates = (
+            valid.groupby("dataset")["response_binary"].mean().reset_index()
+        )
         rates = rates.rename(columns={"response_binary": "positive_rate"})
         rates["judge"] = model
         rows.append(rates)
@@ -165,9 +167,7 @@ def load_task_rates(
     truth_column: str,
     exclude_datasets: set[str],
     task_name: str,
-    annotations_dir: Path,
     cache_dir: Path,
-    refresh: bool,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
     Returns (human_rates, model_rates) for a task, reading each from its own
@@ -176,34 +176,29 @@ def load_task_rates(
       human_rates_<task>.parquet         one per task
       model_rates_<task>_<model>.parquet one per (task, model)
 
-    A model's cache is recomputed when its annotation file changes. The
-    human cache depends on every model file of the task (it pools them),
-    so it is also recomputed when a model file is added or removed.
-    Annotation files are only read if some cache needs recomputing.
+    Existing cache files are always used; delete them to recompute. Note
+    the human cache pools every model file of the task, so delete it too
+    when adding, removing or changing model files. Annotation files are
+    only read if some cache file is missing.
     """
     model_files = {model_name_from_path(f): f for f in files}
 
     human_cache = cache_dir / f"human_rates_{task_name}.parquet"
     model_caches = {
-        m: cache_dir / f"model_rates_{task_name}_{m}.parquet" for m in model_files
+        m: cache_dir / f"model_rates_{task_name}_{m}.parquet"
+        for m in model_files
     }
 
-    human_fresh = not refresh and util.io.is_cache_fresh(
-        human_cache, annotations_dir, *files
-    )
-    stale_models = [
-        m
-        for m, f in model_files.items()
-        if refresh or not util.io.is_cache_fresh(model_caches[m], f)
-    ]
+    human_cached = human_cache.is_file()
+    uncached_models = [m for m in model_files if not model_caches[m].is_file()]
 
-    # The human rates pool every file, so a stale human cache needs them all
-    to_load = stale_models if human_fresh else list(model_files)
+    # The human rates pool every file, so a missing human cache needs them all
+    to_load = uncached_models if human_cached else list(model_files)
     frames = load_task_frames(
         [model_files[m] for m in to_load], truth_column, exclude_datasets
     )
 
-    if human_fresh:
+    if human_cached:
         print(f"Using cached human rates from {human_cache}")
         human_rates = pd.read_parquet(human_cache)
     else:
@@ -214,7 +209,7 @@ def load_task_rates(
     model_rates = []
     for model in sorted(model_files):
         cache_file = model_caches[model]
-        if model in stale_models:
+        if model in uncached_models:
             rates = compute_model_rates({model: frames[model]})
             util.io.write_cache(rates, cache_file)
             print(f"Cached '{model}' rates to {cache_file}")
@@ -284,15 +279,15 @@ def plot_llm_vs_human(
     restyle_legend(ax, judge_order, hatches)
 
     plt.tight_layout()
-    util.graphs.save_plot(graph_dir / f"llm_human_judgement_by_dataset_{task_name}.png")
+    util.graphs.save_plot(
+        graph_dir / f"llm_human_judgement_by_dataset_{task_name}.png"
+    )
 
 
 # ---------------------------------------------------------------------------
 # Orchestration
 # ---------------------------------------------------------------------------
-def main(
-    annotations_dir: Path, graph_dir: Path, cache_dir: Path, refresh: bool
-) -> None:
+def main(annotations_dir: Path, graph_dir: Path, cache_dir: Path) -> None:
     util.graphs.seaborn_setup()
     graph_dir.mkdir(parents=True, exist_ok=True)
 
@@ -304,7 +299,11 @@ def main(
         for task_name, _, _ in TASKS
     }
     all_models = sorted(
-        {model_name_from_path(f) for files in task_files.values() for f in files}
+        {
+            model_name_from_path(f)
+            for files in task_files.values()
+            for f in files
+        }
     )
     model_color, model_hatch = build_model_styles(all_models)
 
@@ -320,9 +319,7 @@ def main(
             truth_column,
             exclude_datasets,
             task_name,
-            annotations_dir,
             cache_dir,
-            refresh,
         )
 
         plot_llm_vs_human(
@@ -367,7 +364,7 @@ if __name__ == "__main__":
         required=True,
         help=(
             "Directory for cached calculations (one file per calculation). "
-            "Cache files older than their source files are recomputed."
+            "Existing cache files are always used; delete them to recompute."
         ),
     )
 
@@ -377,5 +374,4 @@ if __name__ == "__main__":
         annotations_dir=Path(args.annotation_dir),
         graph_dir=Path(args.graph_dir),
         cache_dir=Path(args.cache_dir),
-        refresh=args.refresh_cache,
     )

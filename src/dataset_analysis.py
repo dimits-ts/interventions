@@ -129,12 +129,13 @@ def _prepare_chunk(chunk: pd.DataFrame) -> pd.DataFrame:
 
 
 def load_statistics(
-    csv_path: Path, cache_dir: Path, refresh: bool
+    csv_path: Path, cache_dir: Path
 ) -> dict[str, pd.DataFrame]:
     """
     Load every calculation from the cache where possible. The dataset is
-    only read if at least one cache file is missing or stale, and the
-    text column is only parsed if the word counts need recomputing.
+    only read if at least one cache file is missing, and the text column
+    is only parsed if the word counts need recomputing. Caches are never
+    invalidated automatically; delete a file to force a recompute.
     """
     cache_dir.mkdir(parents=True, exist_ok=True)
     stats = {}
@@ -142,7 +143,7 @@ def load_statistics(
 
     for name in CALCULATIONS:
         cache_file = _cache_path(cache_dir, name)
-        if not refresh and util.io.is_cache_fresh(cache_file, csv_path):
+        if cache_file.is_file():
             print(f"Using cached '{name}' from {cache_file}")
             stats[name] = pd.read_parquet(cache_file)
         else:
@@ -181,7 +182,7 @@ def main(args):
     graph_dir = Path(args.graph_dir)
     cache_dir = Path(args.cache_dir)
 
-    stats = load_statistics(csv_path, cache_dir, refresh=args.refresh_cache)
+    stats = load_statistics(csv_path, cache_dir)
 
     words_per_comment_plot(stats["words_per_comment"], graph_dir)
     comments_per_discussion_plot(stats["comments_per_discussion"], graph_dir)
@@ -375,13 +376,8 @@ if __name__ == "__main__":
         required=True,
         help=(
             "Directory for cached calculations (one file per calculation). "
-            "Cache files older than the dataset are recomputed."
+            "Existing cache files are always used; delete them to recompute."
         ),
-    )
-    parser.add_argument(
-        "--refresh-cache",
-        action="store_true",
-        help="Ignore existing cache files and recompute everything.",
     )
     args = parser.parse_args()
     main(args)

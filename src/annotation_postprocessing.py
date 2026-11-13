@@ -36,11 +36,10 @@ def main(
     output_dir: Path,
     text_file: Path | None,
     cache_dir: Path,
-    refresh: bool,
 ) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    human_raw = load_human_annotations(human_dir, cache_dir, refresh)
+    human_raw = load_human_annotations(human_dir, cache_dir)
     human_dfs = {}
     for i, (real, df) in enumerate(sorted(human_raw.items())):
         alias = f"A{i+1}"
@@ -51,10 +50,12 @@ def main(
 
     for key in human_dfs:
         df = human_dfs[key]
-        human_dfs[key] = df.drop_duplicates(subset="conv_id").reset_index(drop=True)
+        human_dfs[key] = df.drop_duplicates(subset="conv_id").reset_index(
+            drop=True
+        )
 
-    llm_dual_dfs = load_llm_dual_annotations(llm_dir, cache_dir, refresh)
-    llm_single_dfs = load_llm_single_annotations(llm_dir, cache_dir, refresh)
+    llm_dual_dfs = load_llm_dual_annotations(llm_dir, cache_dir)
+    llm_single_dfs = load_llm_single_annotations(llm_dir, cache_dir)
 
     all_dfs = align_to_union({**human_dfs, **llm_dual_dfs})
     conv_ids = set(next(iter(all_dfs.values()))["conv_id"])
@@ -63,11 +64,14 @@ def main(
     output_df = build_output(all_dfs, set(human_dfs), llm_single_dfs)
 
     if text_file is not None:
-        datasets_df = load_datasets(text_file, cache_dir, refresh)
+        datasets_df = load_datasets(text_file, cache_dir)
         output_df = output_df.merge(datasets_df, on="conv_id", how="left")
         n_missing = output_df["dataset"].isna().sum()
         if n_missing:
-            print(f"[warn] {n_missing} rows still have no dataset after " "recovery.")
+            print(
+                f"[warn] {n_missing} rows still have no dataset after "
+                "recovery."
+            )
         output_df = output_df.dropna(subset="dataset")
     else:
         print("[warn] No --text-file given; output has no 'dataset' column.")
@@ -89,31 +93,13 @@ def _safe_name(name: str) -> str:
     return re.sub(r"[^\w.-]", "_", name)
 
 
-def _source_dirs(root: Path, files: list[Path]) -> list[Path]:
-    """
-    Every directory between root and the given files. Adding or removing a
-    file changes its directory's mtime, so including these as cache sources
-    invalidates caches when the set of files changes, not just their content.
-    """
-    root = root.resolve()
-    dirs = {root}
-    for f in files:
-        parent = f.resolve().parent
-        while parent != root and root in parent.parents:
-            dirs.add(parent)
-            parent = parent.parent
-    return sorted(dirs)
-
-
 # ---------------------------------------------------------------------------
 # Text file (only the conv_id -> dataset mapping is needed)
 # ---------------------------------------------------------------------------
-def load_datasets(path: Path, cache_dir: Path, refresh: bool) -> pd.DataFrame:
+def load_datasets(path: Path, cache_dir: Path) -> pd.DataFrame:
     return util.io.load_or_compute(
         cache_dir / "text_datasets.parquet",
-        [path],
         lambda: _read_datasets(path),
-        refresh=refresh,
         label="conv_id -> dataset mapping",
     )
 
@@ -140,19 +126,15 @@ def _read_datasets(path: Path) -> pd.DataFrame:
 # Human annotations (one cache file per annotator)
 # ---------------------------------------------------------------------------
 def load_human_annotations(
-    directory: Path, cache_dir: Path, refresh: bool
+    directory: Path, cache_dir: Path
 ) -> dict[str, pd.DataFrame]:
     groups = discover_human_files(directory)
-    all_files = [p for paths in groups.values() for p in paths]
-    dirs = _source_dirs(directory, all_files)
 
     dfs = {}
     for key, paths in groups.items():
         df = util.io.load_or_compute(
             cache_dir / f"human_{_safe_name(key)}.parquet",
-            [*paths, *dirs],
             lambda paths=paths: read_human_group(paths),
-            refresh=refresh,
             label=f"human annotations '{key}'",
         )
         # Checked on every run, so the warning also shows for cached data
@@ -167,7 +149,9 @@ def load_human_annotations(
 
 
 def discover_human_files(directory: Path) -> dict[str, list[Path]]:
-    files = list(directory.rglob("*_1.xlsx")) + list(directory.rglob("*_2.xlsx"))
+    files = list(directory.rglob("*_1.xlsx")) + list(
+        directory.rglob("*_2.xlsx")
+    )
     files = list({p.resolve(): p for p in files}.values())
     if not files:
         raise ValueError("No matching Excel files found.")
@@ -193,7 +177,9 @@ def read_human_file(path: Path) -> pd.DataFrame:
     df = df.rename(columns={"rationale/comments": "rationale"})
     df = df.fillna(0)
     for col in ANNOTATION_COLS:
-        df[col] = df[col].apply(lambda x: 0 if x == 0 else int(str(x).split(" – ")[0]))
+        df[col] = df[col].apply(
+            lambda x: 0 if x == 0 else int(str(x).split(" – ")[0])
+        )
     # fillna(0) leaves text columns with mixed str/int values, which Parquet
     # cannot store. Casting to str writes identically to the output CSV.
     for col in ["conv_id", "discussion", "data_malformation", "rationale"]:
@@ -205,23 +191,23 @@ def read_human_file(path: Path) -> pd.DataFrame:
 # LLM annotations (one cache file per model file)
 # ---------------------------------------------------------------------------
 def load_llm_dual_annotations(
-    directory: Path, cache_dir: Path, refresh: bool
+    directory: Path, cache_dir: Path
 ) -> dict[str, pd.DataFrame]:
     dfs = {}
     for path in directory.rglob("*_dual_interventions.md.csv"):
         name = re.sub(r"^llm_intervention_", "", path.stem).capitalize()
         dfs[name] = util.io.load_or_compute(
             cache_dir / f"llm_dual_{_safe_name(name)}.parquet",
-            [path],
             lambda path=path: read_llm_dual_file(path),
-            refresh=refresh,
             label=f"LLM dual annotations '{name}'",
         )
     return dfs
 
 
 def read_llm_dual_file(path: Path) -> pd.DataFrame:
-    df = pd.read_csv(path, usecols=["conv_id", "response"], dtype={"conv_id": str})
+    df = pd.read_csv(
+        path, usecols=["conv_id", "response"], dtype={"conv_id": str}
+    )
     parsed = df["response"].apply(parse_llm_response).apply(pd.Series)
     out = pd.concat([df[["conv_id"]], parsed], axis=1)
     out["data_malformation"] = "no"
@@ -239,13 +225,17 @@ def parse_llm_response(text: str) -> dict[str, int]:
         "no_reinforcement": r"No Reinforcement:\s*(\d+)",
     }
     return {
-        col: (int(m.group(1)) if (m := re.search(pat, text, re.IGNORECASE)) else 0)
+        col: (
+            int(m.group(1))
+            if (m := re.search(pat, text, re.IGNORECASE))
+            else 0
+        )
         for col, pat in patterns.items()
     }
 
 
 def load_llm_single_annotations(
-    directory: Path, cache_dir: Path, refresh: bool
+    directory: Path, cache_dir: Path
 ) -> dict[str, pd.DataFrame]:
     dfs = {}
     for path in directory.rglob("*_single_intervention.md.csv"):
@@ -258,9 +248,7 @@ def load_llm_single_annotations(
         name = re.sub(r"^llm_intervention_", "", stem).capitalize()
         dfs[name] = util.io.load_or_compute(
             cache_dir / f"llm_single_{_safe_name(name)}.parquet",
-            [path],
             lambda path=path: read_llm_single_file(path),
-            refresh=refresh,
             label=f"LLM single annotations '{name}'",
         )
     return dfs
@@ -271,7 +259,9 @@ def read_llm_single_file(path: Path) -> pd.DataFrame:
     missing = {"conv_id", "response"} - set(header)
     if missing:
         raise ValueError(f"{path} is missing columns: {missing}")
-    df = pd.read_csv(path, usecols=["conv_id", "response"], dtype={"conv_id": str})
+    df = pd.read_csv(
+        path, usecols=["conv_id", "response"], dtype={"conv_id": str}
+    )
     out = df[["conv_id"]].copy()
     out["single_response"] = (
         df["response"].astype(str).str.extract(r"(\d+)")[0].astype(float)
@@ -303,7 +293,9 @@ def align_to_reference(
 ) -> dict[str, pd.DataFrame]:
     id_frame = pd.DataFrame({"conv_id": sorted(conv_ids)})
     return {
-        name: id_frame.merge(df, on="conv_id", how="left").reset_index(drop=True)
+        name: id_frame.merge(df, on="conv_id", how="left").reset_index(
+            drop=True
+        )
         for name, df in dfs.items()
     }
 
@@ -322,12 +314,20 @@ def build_output(
         extra = ["rationale"] if has_rationale else []
 
         malformed_col = f"{annotator}_malformed"
-        subset = df[["conv_id", "data_malformation"] + ANNOTATION_COLS + extra].copy()
+        subset = df[
+            ["conv_id", "data_malformation"] + ANNOTATION_COLS + extra
+        ].copy()
         subset[malformed_col] = (
-            subset["data_malformation"].astype(str).str.strip().eq("yes").astype(float)
+            subset["data_malformation"]
+            .astype(str)
+            .str.strip()
+            .eq("yes")
+            .astype(float)
         )
         subset = subset.drop(columns=["data_malformation"]).rename(
-            columns={col: f"{annotator}_{col}" for col in ANNOTATION_COLS + extra}
+            columns={
+                col: f"{annotator}_{col}" for col in ANNOTATION_COLS + extra
+            }
         )
         cols = ["conv_id", malformed_col] + [
             f"{annotator}_{col}" for col in ANNOTATION_COLS + extra
@@ -336,7 +336,9 @@ def build_output(
         if annotator in human_names:
             human_malformed_cols.append(malformed_col)
 
-    merged.insert(1, "total_malformed", merged[human_malformed_cols].mean(axis=1))
+    merged.insert(
+        1, "total_malformed", merged[human_malformed_cols].mean(axis=1)
+    )
 
     for model_name, si_df in single_dfs.items():
         col = f"{model_name}_single_response"
@@ -362,7 +364,9 @@ def build_output(
 def print_coverage(df: pd.DataFrame) -> None:
     n = len(df)
     malformed_cols = [
-        c for c in df.columns if c.endswith("_malformed") and c != "total_malformed"
+        c
+        for c in df.columns
+        if c.endswith("_malformed") and c != "total_malformed"
     ]
     annotators = [c.removesuffix("_malformed") for c in malformed_cols]
 
@@ -382,11 +386,18 @@ def print_coverage(df: pd.DataFrame) -> None:
         print("\nSingle-intervention coverage:")
         for col in single_cols:
             n_missing = df[col].isna().sum()
-            print(f"  {col}: {n - n_missing}/{n} covered ({n_missing} missing)")
+            print(
+                f"  {col}: {n - n_missing}/{n} covered ({n_missing} missing)"
+            )
 
     print("\nConversations by annotator count:")
     for count, freq in (
-        df[malformed_cols].notna().sum(axis=1).value_counts().sort_index().items()
+        df[malformed_cols]
+        .notna()
+        .sum(axis=1)
+        .value_counts()
+        .sort_index()
+        .items()
     ):
         print(f"  {count} annotator(s): {freq} ({freq/n:.1%})")
 
@@ -410,7 +421,9 @@ def build_self_consistency_df(
         all_dupes.append(dupes)
 
     if not all_dupes:
-        print("[info] No duplicate conv_ids found for self-consistency analysis.")
+        print(
+            "[info] No duplicate conv_ids found for self-consistency analysis."
+        )
         return
 
     consistency_df = pd.concat(all_dupes, ignore_index=True)
@@ -435,7 +448,7 @@ if __name__ == "__main__":
         required=True,
         help=(
             "Directory for cached calculations (one file per calculation). "
-            "Cache files older than their source files are recomputed."
+            "Existing cache files are always used; delete them to recompute."
         ),
     )
     args = parser.parse_args()
