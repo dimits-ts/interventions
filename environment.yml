@@ -1,6 +1,5 @@
 name: interventions
 channels:
-  - defaults
   - conda-forge
 dependencies:
   - python>=3.13
@@ -15,6 +14,10 @@ dependencies:
   - coloredlogs
   - shap
   - openpyxl
+  - black
+  - ipywidgets
+  - notebook
   - pip
   - pip:
       - syndisco
+      - krippendorff
