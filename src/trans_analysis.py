@@ -38,8 +38,6 @@ def main(input_dir: Path, graph_dir: Path, tables_dir: Path):
 
 
 def plot_metrics(df):
-    sns.set_theme(style="whitegrid")
-
     # Convert to long format
     df_long = df.melt(
         id_vars="Threshold",
@@ -48,7 +46,7 @@ def plot_metrics(df):
         value_name="value",
     )
 
-    fig, ax = plt.subplots(figsize=(6, 4))
+    fig, ax = plt.subplots()
 
     # Colorblind-friendly palette
     palette = sns.color_palette("colorblind", 3)

@@ -316,7 +316,7 @@ def plot_combined_llm_barplot(
 
     plot_df = pd.DataFrame(rows)
 
-    plt.figure(figsize=(7, 5))
+    plt.figure()
 
     ax = sns.countplot(
         data=plot_df,

@@ -28,7 +28,7 @@ import util.graphs
 from util.graphs import COLORBLIND_PALETTE, HATCHES, MARKERS
 
 MAX_COMMENTS_PER_DISCUSSION = 500
-MAX_CHARACTERS_PER_COMMENT = 500
+MAX_WORDS_PER_COMMENT = 500
 
 
 WRITTEN_DATASETS = [
@@ -42,6 +42,20 @@ WRITTEN_DATASETS = [
 SPOKEN_DATASETS = ["Fora", "IQ2", "WHoW"]
 ALL_DATASETS = WRITTEN_DATASETS + SPOKEN_DATASETS
 
+DATASET_RENAMES = {
+    "ceri": "CeRI",
+    "wikidisputes": "WikiDisputes",
+    "wikiconv": "WikiConv",
+    "fora": "Fora",
+    "umod": "UMOD",
+    "wikitactics": "WikiTactics",
+    "whow": "WHoW",
+    "iq2": "IQ2",
+    "cmv_awry": "CMV-Awry",
+}
+EXCLUDED_DATASETS = {"vmd"}
+MODERATION_EXCLUDED_DATASETS = {"UMOD", "WikiDisputes"}
+
 
 DATASET_COLOR = {
     ds: COLORBLIND_PALETTE[i] for i, ds in enumerate(ALL_DATASETS)
@@ -50,35 +64,128 @@ DATASET_HATCH = {ds: HATCHES[i] for i, ds in enumerate(ALL_DATASETS)}
 DATASET_MARKER = {ds: MARKERS[i] for i, ds in enumerate(ALL_DATASETS)}
 
 
+# ---------------------------------------------------------------------------
+# Calculations (each one is cached to its own file)
+# ---------------------------------------------------------------------------
+def compute_words_per_comment(df: pd.DataFrame) -> pd.DataFrame:
+    """One row per comment: dataset, words_per_comment."""
+    return df[["dataset", "words_per_comment"]].reset_index(drop=True)
+
+
+def compute_comments_per_discussion(df: pd.DataFrame) -> pd.DataFrame:
+    """One row per discussion: dataset, conv_id, comments_per_disc."""
+    disc_sizes = (
+        df.groupby(["dataset", "conv_id"])
+        .size()
+        .reset_index(name="comments_per_disc")
+    )
+    disc_sizes["comments_per_disc"] = disc_sizes["comments_per_disc"].clip(
+        upper=MAX_COMMENTS_PER_DISCUSSION
+    )
+    return disc_sizes
+
+
+def compute_moderation(df: pd.DataFrame) -> pd.DataFrame:
+    """One row per discussion: dataset, conv_id, moderator_percent."""
+    disc_mod = (
+        df.groupby(["dataset", "conv_id"])["is_moderator"]
+        .mean()
+        .reset_index(name="moderator_percent")
+    )
+    disc_mod["moderator_percent"] *= 100
+    return disc_mod
+
+
+# name -> (function, does it need the raw text column?)
+CALCULATIONS = {
+    "words_per_comment": (compute_words_per_comment, True),
+    "comments_per_discussion": (compute_comments_per_discussion, False),
+    "moderation": (compute_moderation, False),
+}
+
+
+# ---------------------------------------------------------------------------
+# Caching
+# ---------------------------------------------------------------------------
+def _cache_path(cache_dir: Path, name: str) -> Path:
+    return cache_dir / f"{name}.parquet"
+
+
+def _prepare_chunk(chunk: pd.DataFrame) -> pd.DataFrame:
+    """Filter, rename, and reduce the raw text to a word count per chunk."""
+    chunk = chunk[~chunk["dataset"].isin(EXCLUDED_DATASETS)].copy()
+    chunk["dataset"] = chunk["dataset"].replace(DATASET_RENAMES)
+    if "text" in chunk.columns:
+        # Same result as len(x.split()), but vectorized
+        chunk["words_per_comment"] = (
+            chunk["text"]
+            .astype(str)
+            .str.count(r"\S+")
+            .clip(upper=MAX_WORDS_PER_COMMENT)
+            .astype("int16")
+        )
+        chunk = chunk.drop(columns="text")
+    return chunk
+
+
+def load_statistics(
+    csv_path: Path, cache_dir: Path, refresh: bool
+) -> dict[str, pd.DataFrame]:
+    """
+    Load every calculation from the cache where possible. The dataset is
+    only read if at least one cache file is missing or stale, and the
+    text column is only parsed if the word counts need recomputing.
+    """
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    stats = {}
+    missing = []
+
+    for name in CALCULATIONS:
+        cache_file = _cache_path(cache_dir, name)
+        if not refresh and util.io.is_cache_fresh(cache_file, csv_path):
+            print(f"Using cached '{name}' from {cache_file}")
+            stats[name] = pd.read_parquet(cache_file)
+        else:
+            missing.append(name)
+
+    if not missing:
+        return stats
+
+    need_text = any(CALCULATIONS[name][1] for name in missing)
+    usecols = ["dataset", "conv_id", "is_moderator"]
+    if need_text:
+        usecols.append("text")
+
+    print(f"Loading dataset to compute: {', '.join(missing)}")
+    df = util.io.progress_load_csv(
+        csv_path, usecols=usecols, chunk_fn=_prepare_chunk
+    )
+
+    for name in missing:
+        compute_fn, _ = CALCULATIONS[name]
+        stats[name] = compute_fn(df)
+        cache_file = _cache_path(cache_dir, name)
+        util.io.write_cache(stats[name], cache_file)
+        print(f"Cached '{name}' to {cache_file}")
+
+    return stats
+
+
+# ---------------------------------------------------------------------------
+# Plotting
+# ---------------------------------------------------------------------------
 def main(args):
     util.graphs.seaborn_setup()
 
     csv_path = Path(args.dataset_path)
     graph_dir = Path(args.graph_dir)
+    cache_dir = Path(args.cache_dir)
 
-    print("Loading dataset to extract statistics...")
-    df = util.io.progress_load_csv(csv_path)
-    df = df[df.dataset != "vmd"]
-    df.dataset = df.dataset.replace(
-        {
-            "ceri": "CeRI",
-            "wikidisputes": "WikiDisputes",
-            "wikiconv": "WikiConv",
-            "fora": "Fora",
-            "umod": "UMOD",
-            "wikitactics": "WikiTactics",
-            "whow": "WHoW",
-            "iq2": "IQ2",
-            "cmv_awry": "CMV-Awry",
-        }
-    )
+    stats = load_statistics(csv_path, cache_dir, refresh=args.refresh_cache)
 
-    words_per_comment_plot(df, graph_dir)
-    comments_per_discussion_plot(df, graph_dir)
-    moderation_plot(
-        df[(df.dataset != "UMOD") & (df.dataset != "WikiDisputes")],
-        graph_dir=graph_dir,
-    )
+    words_per_comment_plot(stats["words_per_comment"], graph_dir)
+    comments_per_discussion_plot(stats["comments_per_discussion"], graph_dir)
+    moderation_plot(stats["moderation"], graph_dir)
 
 
 def grouped_legend(ax, datasets_in_plot, **legend_kwargs):
@@ -142,14 +249,10 @@ def apply_hatches_to_histplot(ax, hue_order):
             p.set_edgecolor("black")
 
 
-def moderation_plot(df: pd.DataFrame, graph_dir: Path) -> None:
-    # One observation per discussion
-    disc_mod = (
-        df.groupby(["dataset", "conv_id"])["is_moderator"]
-        .mean()
-        .reset_index(name="moderator_percent")
-    )
-    disc_mod["moderator_percent"] *= 100
+def moderation_plot(disc_mod: pd.DataFrame, graph_dir: Path) -> None:
+    disc_mod = disc_mod[
+        ~disc_mod.dataset.isin(MODERATION_EXCLUDED_DATASETS)
+    ]
 
     # Drop datasets with zero moderation
     nonzero = disc_mod.groupby("dataset")["moderator_percent"].mean()
@@ -162,7 +265,7 @@ def moderation_plot(df: pd.DataFrame, graph_dir: Path) -> None:
         .index.tolist()
     )
 
-    plt.figure(figsize=(8, 5))
+    plt.figure()
     ax = sns.barplot(
         data=disc_mod,
         y="dataset",
@@ -191,20 +294,13 @@ def moderation_plot(df: pd.DataFrame, graph_dir: Path) -> None:
     util.graphs.save_plot(graph_dir / "analysis_moderation_perc.png")
 
 
-def comments_per_discussion_plot(df: pd.DataFrame, graph_dir: Path) -> None:
-    disc_sizes = (
-        df.groupby(["dataset", "conv_id"])
-        .size()
-        .reset_index(name="comments_per_disc")
-    )
-    disc_sizes["comments_per_disc"] = disc_sizes["comments_per_disc"].clip(
-        upper=MAX_COMMENTS_PER_DISCUSSION
-    )
-
-    hue_order = sorted(df["dataset"].unique())
+def comments_per_discussion_plot(
+    disc_sizes: pd.DataFrame, graph_dir: Path
+) -> None:
+    hue_order = sorted(disc_sizes["dataset"].unique())
     palette = {d: DATASET_COLOR.get(d, "#888888") for d in hue_order}
 
-    plt.figure(figsize=(8, 5))
+    plt.figure()
     ax = sns.histplot(
         data=disc_sizes,
         x="comments_per_disc",
@@ -230,21 +326,15 @@ def comments_per_discussion_plot(df: pd.DataFrame, graph_dir: Path) -> None:
     util.graphs.save_plot(graph_dir / "analysis_comments_per_discussion.png")
 
 
-def words_per_comment_plot(df: pd.DataFrame, graph_dir: Path) -> None:
-    df = df.copy()
-    df["words_per_comment"] = (
-        df.text.astype(str).apply(lambda x: len(x.split())).astype(int)
-    )
-    df["words_per_comment"] = df["words_per_comment"].clip(
-        upper=MAX_CHARACTERS_PER_COMMENT
-    )
-
-    hue_order = sorted(df["dataset"].unique())
+def words_per_comment_plot(
+    words_df: pd.DataFrame, graph_dir: Path
+) -> None:
+    hue_order = sorted(words_df["dataset"].unique())
     palette = {d: DATASET_COLOR.get(d, "#888888") for d in hue_order}
 
-    plt.figure(figsize=(8, 5))
+    plt.figure()
     ax = sns.histplot(
-        data=df,
+        data=words_df,
         x="words_per_comment",
         hue="dataset",
         bins=50,
@@ -279,6 +369,19 @@ if __name__ == "__main__":
         "--graph-dir",
         required=True,
         help="Directory where the graphs will be exported to.",
+    )
+    parser.add_argument(
+        "--cache-dir",
+        required=True,
+        help=(
+            "Directory for cached calculations (one file per calculation). "
+            "Cache files older than the dataset are recomputed."
+        ),
+    )
+    parser.add_argument(
+        "--refresh-cache",
+        action="store_true",
+        help="Ignore existing cache files and recompute everything.",
     )
     args = parser.parse_args()
     main(args)

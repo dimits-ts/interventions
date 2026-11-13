@@ -1,14 +1,18 @@
 #!/bin/bash
-
+# Important! Assumes the existence of ../facilitation-dataset/pefk.csv
+# Use the dataset generation script (https://github.com/dimits-ts/facilitation-dataset) to get it
+# Do the same for the annotation data (https://github.com/dimits-ts/annotation)
 python src/annotation_postprocessing.py \
     --human-annotation-dir ../annotation/interventions/results \
     --llm-annotation-dir data/llm_output \
-    --output-dir data/annotation_output\
-    --text-file ../facilitation-dataset/pefk.csv
+    --output-dir data/annotation_output \
+    --text-file ../facilitation-dataset/pefk.csv \
+    --cache-dir cache
 
 python src/dataset_analysis.py \
     --dataset-path ../facilitation-dataset/pefk.csv \
-    --graph-dir graphs
+    --graph-dir graphs \
+    --cache-dir cache
 
 python src/llm_test.py \
     --annotation-dir data/llm_output \
@@ -24,3 +28,8 @@ python src/trans_analysis.py \
     --input-dir data/trans_results/detection \
     --graph-dir graphs/detection \
     --tables-dir manuscript/generated/detection
+
+python judgement_analysis.py \
+    --annotation-dir data/llm_output \
+    --graph-dir graphs \
+    --cache-dir cache

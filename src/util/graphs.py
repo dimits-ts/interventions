@@ -20,7 +20,6 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-
 # Okabe–Ito palette
 COLORBLIND_PALETTE = [
     # --- Core ---
@@ -52,8 +51,56 @@ COLORBLIND_PALETTE = [
     "#FFB000",
 ]
 
-MARKERS = ["o", "s", "D", "^", "v", "P", "X"]
-HATCHES = ["//", "\\\\", "++", "oo", "..", "xx", "**", "--"]
+MARKERS = [
+    "o",
+    "s",
+    "D",
+    "^",
+    "v",
+    "P",
+    "X",
+    "*",
+    "p",
+    "h",
+    "H",
+    "<",
+    ">",
+    "d",
+    "8",
+    "1",
+    "2",
+    "3",
+    "4",
+    "|",
+    "_",
+    "+",
+    "x",
+    ".",
+    ",",
+]
+
+HATCHES = [
+    "//",
+    "\\\\",
+    "++",
+    "oo",
+    "..",
+    "xx",
+    "**",
+    "--",
+    "\\\\",
+    "||",
+    "OO",
+    "OOO",
+    "///",
+    "\\\\\\",
+    "+++",
+    "xxx",
+    "***",
+    "...",
+    "///\\\\",
+    "||--",
+]
 
 # Visually distinct line styles, as (offset, (on, off, ...)) dash tuples so
 # every pattern is explicit. Patterns scale with linewidth (matplotlib's
@@ -74,7 +121,7 @@ LINESTYLES = [
 DEFAULT_FIGSIZE = (14, 6)
 
 
-def graph_setup() -> None:
+def seaborn_setup() -> None:
     sns.set_theme(
         context="paper",
         style="ticks",

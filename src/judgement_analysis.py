@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
+import util.io
 import util.graphs
 from util.graphs import COLORBLIND_PALETTE, HATCHES
 from llm_test import normalize_binary_response
@@ -92,21 +93,20 @@ def load_task_frames(
     Keeps 'conv_id' too, when present, so human ground truth can be
     deduplicated across model files later on.
     """
+    wanted = {"dataset", "response", truth_column, "conv_id"}
     frames = {}
     for file_path in files:
         model = model_name_from_path(file_path)
-        df = pd.read_csv(file_path)
+        # Only parse the columns we need, never the discussion text
+        df = pd.read_csv(file_path, usecols=lambda c: c in wanted)
 
         if exclude_datasets:
             df = df[~df["dataset"].isin(exclude_datasets)]
 
-        keep_cols = ["dataset", "response", truth_column]
-        if "conv_id" in df.columns:
-            keep_cols.append("conv_id")
-        df = df[keep_cols].copy()
-
+        df = df.copy()
         df["response_binary"] = df["response"].apply(normalize_binary_response)
         df["truth_binary"] = df[truth_column].apply(normalize_binary_response)
+        df = df.drop(columns=["response", truth_column])
 
         frames[model] = df
 
@@ -146,9 +146,7 @@ def compute_model_rates(frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
     rows = []
     for model, df in frames.items():
         valid = df.dropna(subset=["response_binary"])
-        rates = (
-            valid.groupby("dataset")["response_binary"].mean().reset_index()
-        )
+        rates = valid.groupby("dataset")["response_binary"].mean().reset_index()
         rates = rates.rename(columns={"response_binary": "positive_rate"})
         rates["judge"] = model
         rows.append(rates)
@@ -159,20 +157,87 @@ def compute_model_rates(frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
     )
 
 
+# ---------------------------------------------------------------------------
+# Caching
+# ---------------------------------------------------------------------------
+def load_task_rates(
+    files: list[Path],
+    truth_column: str,
+    exclude_datasets: set[str],
+    task_name: str,
+    annotations_dir: Path,
+    cache_dir: Path,
+    refresh: bool,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Returns (human_rates, model_rates) for a task, reading each from its own
+    cache file where possible:
+
+      human_rates_<task>.parquet         one per task
+      model_rates_<task>_<model>.parquet one per (task, model)
+
+    A model's cache is recomputed when its annotation file changes. The
+    human cache depends on every model file of the task (it pools them),
+    so it is also recomputed when a model file is added or removed.
+    Annotation files are only read if some cache needs recomputing.
+    """
+    model_files = {model_name_from_path(f): f for f in files}
+
+    human_cache = cache_dir / f"human_rates_{task_name}.parquet"
+    model_caches = {
+        m: cache_dir / f"model_rates_{task_name}_{m}.parquet" for m in model_files
+    }
+
+    human_fresh = not refresh and util.io.is_cache_fresh(
+        human_cache, annotations_dir, *files
+    )
+    stale_models = [
+        m
+        for m, f in model_files.items()
+        if refresh or not util.io.is_cache_fresh(model_caches[m], f)
+    ]
+
+    # The human rates pool every file, so a stale human cache needs them all
+    to_load = stale_models if human_fresh else list(model_files)
+    frames = load_task_frames(
+        [model_files[m] for m in to_load], truth_column, exclude_datasets
+    )
+
+    if human_fresh:
+        print(f"Using cached human rates from {human_cache}")
+        human_rates = pd.read_parquet(human_cache)
+    else:
+        human_rates = compute_human_rates(frames)
+        util.io.write_cache(human_rates, human_cache)
+        print(f"Cached human rates to {human_cache}")
+
+    model_rates = []
+    for model in sorted(model_files):
+        cache_file = model_caches[model]
+        if model in stale_models:
+            rates = compute_model_rates({model: frames[model]})
+            util.io.write_cache(rates, cache_file)
+            print(f"Cached '{model}' rates to {cache_file}")
+        else:
+            print(f"Using cached '{model}' rates from {cache_file}")
+            rates = pd.read_parquet(cache_file)
+        model_rates.append(rates)
+
+    return human_rates, pd.concat(model_rates, ignore_index=True)
+
+
+# ---------------------------------------------------------------------------
+# Plotting
+# ---------------------------------------------------------------------------
 def plot_llm_vs_human(
-    frames: dict[str, pd.DataFrame],
+    human_rates: pd.DataFrame,
+    model_rates: pd.DataFrame,
     task_name: str,
     graph_dir: Path,
     model_color: dict,
     model_hatch: dict,
     title: str,
 ) -> None:
-    if not frames:
-        print(f"[info] No files for '{task_name}' human-vs-LLM graph.")
-        return
-
-    human_rates = compute_human_rates(frames)
-    model_rates = compute_model_rates(frames)
     plot_df = pd.concat([human_rates, model_rates], ignore_index=True)
 
     if plot_df.empty:
@@ -190,7 +255,7 @@ def plot_llm_vs_human(
     palette = {HUMAN_LABEL: HUMAN_COLOR, **{m: model_color[m] for m in models}}
     hatches = {HUMAN_LABEL: HUMAN_HATCH, **{m: model_hatch[m] for m in models}}
 
-    plt.figure(figsize=(9, 5.5))
+    plt.figure()
     ax = sns.barplot(
         data=plot_df,
         x="dataset",
@@ -219,15 +284,15 @@ def plot_llm_vs_human(
     restyle_legend(ax, judge_order, hatches)
 
     plt.tight_layout()
-    util.graphs.save_plot(
-        graph_dir / f"llm_human_judgement_by_dataset_{task_name}.png"
-    )
+    util.graphs.save_plot(graph_dir / f"llm_human_judgement_by_dataset_{task_name}.png")
 
 
 # ---------------------------------------------------------------------------
 # Orchestration
 # ---------------------------------------------------------------------------
-def main(annotations_dir: Path, graph_dir: Path) -> None:
+def main(
+    annotations_dir: Path, graph_dir: Path, cache_dir: Path, refresh: bool
+) -> None:
     util.graphs.seaborn_setup()
     graph_dir.mkdir(parents=True, exist_ok=True)
 
@@ -239,11 +304,7 @@ def main(annotations_dir: Path, graph_dir: Path) -> None:
         for task_name, _, _ in TASKS
     }
     all_models = sorted(
-        {
-            model_name_from_path(f)
-            for files in task_files.values()
-            for f in files
-        }
+        {model_name_from_path(f) for files in task_files.values() for f in files}
     )
     model_color, model_hatch = build_model_styles(all_models)
 
@@ -254,10 +315,19 @@ def main(annotations_dir: Path, graph_dir: Path) -> None:
             continue
 
         print(f"\n=== {task_name} ({len(files)} model file(s)) ===")
-        frames = load_task_frames(files, truth_column, exclude_datasets)
+        human_rates, model_rates = load_task_rates(
+            files,
+            truth_column,
+            exclude_datasets,
+            task_name,
+            annotations_dir,
+            cache_dir,
+            refresh,
+        )
 
         plot_llm_vs_human(
-            frames,
+            human_rates,
+            model_rates,
             task_name,
             graph_dir,
             model_color,
@@ -291,10 +361,21 @@ if __name__ == "__main__":
         required=True,
         help="Directory where graphs will be saved.",
     )
+    parser.add_argument(
+        "--cache-dir",
+        type=str,
+        required=True,
+        help=(
+            "Directory for cached calculations (one file per calculation). "
+            "Cache files older than their source files are recomputed."
+        ),
+    )
 
     args = parser.parse_args()
 
     main(
         annotations_dir=Path(args.annotation_dir),
         graph_dir=Path(args.graph_dir),
+        cache_dir=Path(args.cache_dir),
+        refresh=args.refresh_cache,
     )
