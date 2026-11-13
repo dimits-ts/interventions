@@ -1,44 +1,20 @@
-"""
-run_ablation_analysis.py
+# Intervention Detection in Discussions
+# Copyright (C) 2026 Dimitris Tsirmpas
 
-Analysis-only half of the prompt-ablation study. Assumes inference has
-already been run (e.g. by run_ablation.sh) and that per-variant CSVs already
-sit in annotations_dir, named llm_intervention_<VARIANT>_timing_<task>.csv.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 
-This version is fully self-contained -- it does NOT import llm_test.py, on
-purpose, since llm_test.py is shared elsewhere in the project and its
-normalize_binary_response() only understands plain "0"/"1"/"yes"/"no"
-responses. Your model's responses for this task instead look like:
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
-    Positive: 4   Negative: 1   No Reinforcement: 2
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-So this script parses that format directly and derives a binary prediction
-via argmax of the three counts:
-  - "positive_reinforcement" wins  -> predicted 1
-  - "negative_reinforcement" or "no_reinforcement" wins -> predicted 0
-  - a genuine tie (including all-zero, which usually means the regex found
-    nothing at all) -> unparseable, excluded from metrics
-
---truth_column is assumed to already be binary (0/1), unchanged from before
--- only the prediction side needed reparsing. If your ground truth is
-actually a 3-way label instead, this mapping is the wrong tool; say so and
-this can be reworked into a proper multi-class comparison instead.
-
-Reports:
-  - a combined metrics table (Precision/Recall/F1p/F1n/Accuracy/Support),
-    one row per (variant, dataset), plus an "All" macro-average row per
-    variant -- same shape as before
-  - the unparseable-response rate per variant
-  - pairwise row-level agreement between every pair of variants
-Usage
------
-python run_ablation_analysis.py \\
-    --annotations_dir data/llm_output/ablation/llama8b \\
-    --output_dir data/llm_metrics/ablation/llama8b \\
-    --truth_column should_intervene \\
-    --task_name prediction
-"""
-
+# You may contact the author at dim.tsirmpas@aueb.gr
 import argparse
 import itertools
 import re
@@ -46,7 +22,6 @@ from pathlib import Path
 
 import pandas as pd
 import sklearn.metrics
-from scipy.stats import binomtest
 
 
 REINFORCEMENT_PATTERNS = {

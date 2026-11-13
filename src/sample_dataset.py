@@ -1,29 +1,20 @@
-"""
-sample_dataset.py
+# Intervention Detection in Discussions
+# Copyright (C) 2026 Dimitris Tsirmpas
 
-Draws a fixed, reproducible sample from a CSV so that every prompt variant
-in the ablation study is evaluated on exactly the same rows. This matters
-for two reasons:
-  1. It's the only way to compare variants fairly -- if each variant saw a
-     different random subset, differences in metrics could just be sampling
-     noise rather than a prompt effect.
-  2. run_ablation_analysis.py's pairwise agreement / McNemar's test assumes
-     the rows are the same items in the same order across variant files.
-     Sampling once, up front, and feeding every variant the same sampled
-     CSV guarantees that.
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 
-The sample is deterministic given the same --seed, so re-running the
-pipeline (or adding a new prompt variant later) reuses the identical subset.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 
-Example
--------
-python sample_dataset.py \\
-    --input_csv data/llm_input/prediction/llm_test.csv \\
-    --output_csv data/llm_input/prediction/llm_test_sample.csv \\
-    --frac 0.2 \\
-    --seed 42
-"""
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# You may contact the author at dim.tsirmpas@aueb.gr
 import argparse
 from pathlib import Path
 

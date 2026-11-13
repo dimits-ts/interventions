@@ -1,79 +1,80 @@
+# Intervention Detection in Discussions
+# Copyright (C) 2026 Dimitris Tsirmpas
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# You may contact the author at dim.tsirmpas@aueb.gr
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 
-MARKERS = [
-    "●",
-    "○",
-    "▲",
-    "△",
-    "▼",
-    "▽",
-    "◉",
-    "◎",
-    "■",
-    "□",
-    "◈",
-    "◦",
-    "♣",
-    "♢",
-    "⬤",
-    "⬌",
-]
-
-HATCHES = [
-    "",
-    "*",
-    "+",
-    "-",
-    ".",
-    "/",
-    "O",
-    "X",
-    "\\",
-    "++",
-    "-+",
-    "/+",
-    "o",
-    "x",
-    "|",
-    "//",
-    "\\\\",
-    r"\/\\/ \\",
-    r"\/\/",
-    "/-",
-    "\\O",
-    "/.",
-    "\\/.",
-    "o/",
-    "o-.",
-    "o+-",
-    "O/",
-]
-
+# Okabe–Ito palette
 COLORBLIND_PALETTE = [
-    "#000000",  # black
-    "#E69F00",  # orange
-    "#56B4E9",  # sky blue
-    "#009E73",  # bluish green
-    "#F0E442",  # yellow
-    "#0072B2",  # blue
-    "#D55E00",  # vermillion
-    "#CC79A7",  # reddish purple
-    "#999999",  # mid gray (neutral, high legibility)
-    "#8DD3C7",  # light teal (tone-safe extension)
-    "#FDB462",  # light orange (paired but distinct in luminance)
-    "#B3DE69",  # light yellow-green (safe vs. green due to brightness)
-    "#80B1D3",  # soft blue (lightened blue variant)
-    "#FB8072",  # soft coral (distinct from vermillion)
-    "#CAB2D6",  # lavender (low-saturation purple)
-    "#BC80BD",  # plum (dark purple contrast partner)
+    # --- Core ---
+    "#000000",
+    "#E69F00",
+    "#56B4E9",
+    "#009E73",
+    "#F0E442",
+    "#0072B2",
+    "#D55E00",
+    "#CC79A7",
+    # --- Neutral / light extensions ---
+    "#999999",
+    "#8DD3C7",
+    "#FDB462",
+    "#B3DE69",
+    "#80B1D3",
+    "#FB8072",
+    "#CAB2D6",
+    "#BC80BD",
+    # --- Additional medium/dark colors ---
+    "#4D4D4D",
+    "#1B9E77",
+    "#7570B3",
+    "#A6761D",
+    "#66A61E",
+    "#E7298A",
+    "#A6CEE3",
+    "#FFB000",
 ]
 
+MARKERS = ["o", "s", "D", "^", "v", "P", "X"]
+HATCHES = ["//", "\\\\", "++", "oo", "..", "xx", "**", "--"]
 
-def seaborn_setup() -> None:
+# Visually distinct line styles, as (offset, (on, off, ...)) dash tuples so
+# every pattern is explicit. Patterns scale with linewidth (matplotlib's
+# lines.scale_dashes), so they stay distinct at any line weight.
+# Index meaning is fixed; callers pick by index or cycle in order:
+#   0 solid, 1 dashed, 2 dotted, 3 dash-dot, 4 dash-dot-dot,
+#   5 long dash, 6 loosely dotted
+LINESTYLES = [
+    "solid",
+    (0, (5, 2)),
+    (0, (1, 1)),
+    (0, (5, 2, 1, 2)),
+    (0, (5, 2, 1, 2, 1, 2)),
+    (0, (10, 3)),
+    (0, (1, 3)),
+]
+
+DEFAULT_FIGSIZE = (14, 6)
+
+
+def graph_setup() -> None:
     sns.set_theme(
         context="paper",
         style="ticks",
@@ -89,22 +90,36 @@ def seaborn_setup() -> None:
         {
             "text.usetex": True,
             # Figure
-            "figure.figsize": (12, 8),
+            "figure.figsize": DEFAULT_FIGSIZE,
             "figure.dpi": 300,
             "savefig.dpi": 300,
             "savefig.bbox": "tight",
             "savefig.pad_inches": 0.02,
             # Fonts
+            # Same fonts as the ACM acmart class: Linux Libertine for text,
+            # newtxmath (Libertine variant) for math. With usetex the font
+            # comes from the LaTeX preamble below; font.serif only names a
+            # font matplotlib knows for usetex, so it does not log "No
+            # LaTeX-compatible font found". The preamble loads after it.
             "font.family": "serif",
-            "font.serif": ["Liberation Serif", "Nimbus Roman"],
+            "font.serif": ["Computer Modern Roman"],
+            "text.latex.preamble": (
+                r"\usepackage[tt=false,type1=true]{libertine}"
+                r"\usepackage[libertine]{newtxmath}"
+            ),
             "font.size": 18,
             "axes.titlesize": 24,
             "axes.labelsize": 22,
             "xtick.labelsize": 14,
             "ytick.labelsize": 14,
-            "legend.fontsize": 18,
-            "figure.titlesize": 22,
+            "legend.fontsize": 22,
+            "legend.title_fontsize": 22,
+            "figure.titlesize": 26,
             "figure.labelsize": 22,
+            # Subplots
+            "figure.subplot.wspace": 0.3,
+            "figure.subplot.hspace": 0.7,
+            "figure.subplot.bottom": 0.2,
             # Axes
             "axes.linewidth": 0.8,
             "axes.edgecolor": "black",

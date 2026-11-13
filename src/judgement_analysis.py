@@ -15,36 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # You may contact the author at dim.tsirmpas@aueb.gr
-
-"""
-judgement_analysis.py
-
-Two graphs, built on top of the same `llm_intervention_<model>_timing_<task>.csv`
-files already produced by the inference pipeline and consumed by llm_test.py:
-
-  1. Judgement frequency by model and dataset
-     A count plot of the LLM's binary judgements (No / Yes), grouped by
-     dataset and coloured by model, so you can see how often each model
-     says "yes" vs "no" on each dataset.
-
-  2. LLM vs human judgements by dataset
-     A grouped bar chart comparing the "positive judgement rate" (fraction
-     of Yes / 1 judgements) of the human ground truth (the task's truth
-     column, e.g. should_intervene / is_moderator) against every model's
-     predictions, per dataset.
-
-Both graphs are produced once per task ("prediction" and "detection"), the
-same two tasks llm_test.py already handles, using the same file-discovery
-and response-normalization logic so results stay consistent with the rest
-of the analysis pipeline.
-
-Usage
------
-python judgement_analysis.py \\
-    --annotation-dir data/llm_output \\
-    --graph-dir graphs
-"""
-
 import argparse
 from pathlib import Path
 
