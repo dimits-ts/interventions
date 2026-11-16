@@ -24,7 +24,7 @@
 \usepackage{amssymb}
 \usepackage{amsthm}
 \usepackage{amsmath}
-\usepackage{acronym}
+\usepackage{acro}
 \usepackage{multirow}
 \usepackage{siunitx}
 \usepackage{tabularx}
@@ -36,6 +36,23 @@
 \newcommand{\explink}{\url{https://github.com/dimits-ts/interventions}}
 \newcommand{\datasetlink}{\url{https://github.com/dimits-ts/facilitation-dataset}}
 \newcommand{\surveydatalink}{\url{https://github.com/dimits-ts/annotation}}
+
+\acsetup{make-links}
+\DeclareAcronym{nlp}{short = NLP, long = Natural Language Processing}
+\DeclareAcronym{nlu}{short = NLU, long = Natural Language Understanding}
+\DeclareAcronym{ml}{short = ML, long = Machine Learning}
+\DeclareAcronym{rq}{short = RQ, long = Research Question}
+\DeclareAcronym{pefk}{short = PEFKI, long = Prosocial and Effective Facilitation in Konversational Interactions}
+\DeclareAcronym{eo}{short = EncOn, long = Encoder-Only}
+\DeclareAcronym{iaa}{short = IAA, long = Inter-Annotator Agreement}
+\DeclareAcronym{umod}{short = UMOD, long = User Moderation}
+\DeclareAcronym{iq2}{short = IQ2, long = Intelligence Squared}
+\DeclareAcronym{ceri}{short = CeRI, long = Cornell eRulemaking Initative}
+\DeclareAcronym{whow}{short = WHoW, long = Why-How-Who}
+\DeclareAcronym{awry}{short = AWRY, long = Convs. Gone Awry}
+\DeclareAcronym{cmv}{short = CMV II, long = Change My View}
+\DeclareAcronym{wt}{short = WT, long = WikiTactics}
+\DeclareAcronym{cot}{short = CoT, long = Chain of Thought}
 
 \newcommand{\cmark}{\ding{51}}
 \newcommand{\xmark}{\ding{55}}
@@ -187,7 +204,7 @@ Most platforms hold users responsible for maintaining the quality of discussion 
 		\acf{wt} \citeyearpar{wikitactics} & 3,850 & 213 & Wikipedia & Text & $\checkmark$ & \ref{def:facilitator}\\ 
 		WikiConv \citeyearpar{wikiconv} & 17,806,373 & 4,486,983 & Wikipedia & Text & $\times$ & \ref{def:escalation}\\ 
 		\acf{awry} \& \acf{cmv} \citeyearpar{cmv_awry2} & 40,607 & 6,691 & Wikipedia \& Reddit & Text & $\times$ & \ref{def:escalation}\\
-		\acf{ceri} \citeyearpar{ceri} & 3,700 & 132 & Delib. & Text & $\checkmark$ & \ref{def:facilitator}\\ 
+		\acf{ceri} \citeyearpar{ceri} & 3,700 & 132 & Deliberation & Text & $\checkmark$ & \ref{def:facilitator}\\ 
 		\acf{umod} \citeyearpar{umod} & 2,000 & 1,000 & Reddit & Text& $\checkmark$ & \ref{def:facilitative}\\ 
 		\acf{iq2} \citeyearpar{zhang-etal-2016-conversational} & 34,245 & 108 & Debate & Oral & $\checkmark$ & \ref{def:facilitator}\\ 
 		\acf{whow} \citeyearpar{chen-etal-2025-whow} & 25,542 & 178 & Radio / TV & Oral & $\checkmark$ & \ref{def:facilitator}\\ 
@@ -198,20 +215,13 @@ Most platforms hold users responsible for maintaining the quality of discussion 
 	\label{tab:datasets}
 \end{table*}
 
-Since there is currently no dataset that explicitly concerns itself with facilitation interventions, we construct the ``\acf{pefk}'' dataset, a standardized, multi-domain compilation of the facilitation-related datasets listed by \citet{korre-etal-2025-evaluation} (see Table~\ref{tab:datasets}). \ac{pefk} contains data from both online forums and oral discussions, and standardizes metadata, metrics, and labeling schemes according to a simple, unified schema, making it suitable as a benchmark on facilitator interventions.\footnote{Information on preprocessing steps and dataset schema can be found in App.~\ref{sec:app:dataset}.}
+Since there is currently no dataset that explicitly concerns itself with facilitation interventions, we construct the ``\acf{pefk}'' dataset, a standardized, multi-domain compilation of the facilitation-related datasets listed by \citet{korre-etal-2025-evaluation} (see Table~\ref{tab:datasets}). \ac{pefk} contains data from both online forums and oral discussions,\footnote{The differences between different domains and modalities (transcripts vs. written comments) are analyzed in App.~\ref{sec:app:dataset:exploratory}.} and standardizes metadata, metrics, and labeling schemes according to a simple, unified schema, making it suitable as a benchmark on facilitator interventions.\footnote{Information on preprocessing steps and dataset schema can be found in App.~\ref{sec:app:dataset}.} The constituent datasets described below straddle all three definitions described in \S\ref{sec:related:interventions}.\footnote{Including escalation and toxicity, as used in Def.~\ref{def:escalation}, although this information is not utilized in this study.} 
 
-
-\subsection{Datasets Used}
-
-\paragraph{Wikipedia} The WikiConv \citep{wikiconv} dataset is the largest collection of discussions among Wikipedia contributors who may request arbitration by a \emph{volunteer facilitator}. \ac{wt} \citep{wikitactics}, \ac{awry} \citep{cmv_awry2} and WikiDisputes \citep{wikidisputes} are smaller subsets of WikiConv which include additional meta-data information and annotations. The structure of these discussions are ideal for Def.~\ref{def:escalation}, which is why only \ac{wt} includes enough information to be usable for studying facilitation on a deeper level.
+\paragraph{Wikipedia} The WikiConv \citep{wikiconv} dataset is the largest collection of discussions among Wikipedia contributors who may request arbitration by a \emph{volunteer facilitator}. \ac{wt} \citep{wikitactics}, \ac{awry} \citep{cmv_awry2} and WikiDisputes \citep{wikidisputes} are smaller subsets of WikiConv which include additional meta-data information and annotations. The structure of these discussions are ideal for Def.~\ref{def:escalation}, which is why only \ac{wt} includes enough information to be usable for studying facilitation on a deeper level (Def.~\ref{def:facilitator}).
 
 \paragraph{Social Media} The \ac{cmv} \citep{cmv_awry2} and \ac{umod} \citep{umod} datasets are both collected from Reddit, although they answer completely different questions. Like WikiConv, \ac{cmv} looks for discussion escalation by looking for moderation artifacts (here, content moderation in a comment chain) by \emph{volunteer facilitators}. In contrast, \ac{umod} looks for these facilitators via third-party annotation, according to Def.~\ref{def:facilitative}.
 
-\paragraph{Professional Facilitation}
-
-\ac{pefk} is designed to facilitate exploration and analysis of facilitative interventions under all three definitions described in \S\ref{sec:related:interventions}. Specifically, we use a subset of the data that includes professional facilitation annotations (specifically \ac{wt}, \ac{ceri}, \ac{whow}, \ac{iq2}, but not \ac{umod}--see App.~\ref{sec:app:dataset:preprocessing} )  to train our models according to Def.~\ref{def:facilitator} in \S\ref{sec:facilitator} (see App.~\ref{sec:app:dataset:exploratory}; Fig.~\ref{fig:moderation-perc}). We also use a subset of \ac{pefk} to survey human facilitative patterns according to Def.~\ref{def:facilitative}. Finally, we include escalation and toxicity, as used in Def.~\ref{def:escalation}, although this information is not utilized in this study (see \S\ref{sec:related:interventions}).
-
-
+\paragraph{Professional Facilitation} In some specialized domains a trained, professional facilitator is present, although their role may vary depending on the specific context of each dataset. In \ac{ceri}, the facilitators were trained by the researchers according to their own developed protocol for deliberation and consensus-building. The same applies for the Fora dataset \citep{schroeder-etal-2024-fora}\footnote{Although, notably, the level and objectives of this training are not described in the paper.} On the other hand, the facilitators in \ac{whow} and \ac{iq2} are experienced debate hosts (in radio and formal debates respectively).\footnote{Note that some \ac{iq2} debates are also present in \ac{whow}, which is handled in the preprocessing step (App.~\ref{sec:app:dataset:preprocessing}).} These datasets define facilitation according to Def.~\ref{def:facilitator}.
 
 
 \section{Do humans and LLMs intervene at similar circumstances?}
@@ -479,26 +489,10 @@ We used LLMs for some orthographic and grammatical support throughout the docume
 \bibliography{refs}
 \appendix
 
+
 \section{Acronyms}
 
-\begin{acronym}[WWW] % Give the longest label here so that the list is nicely aligned
-	%\acro{ai}[AI]{Artificial Intelligence}
-	\acro{nlp}[NLP]{Natural Language Processing}
-	\acro{nlu}[NLU]{Natural Language Understanding}
-	\acro{ml}[ML]{Machine Learning}
-	\acro{rq}[RQ]{Research Question}
-	\acro{pefk}[PEFKI]{Prosocial and Effective Facilitation in Konversational Interactions}
-	\acro{eo}[EncOn]{Encoder-Only}
-	\acro{iaa}[IAA]{Inter-Annotator Agreement}
-	\acro{umod}[UMOD]{User Moderation}
-	\acro{iq2}[IQ2]{Intelligence Squared}
-	\acro{ceri}[CeRI]{Cornell eRulemaking Initative}
-	\acro{whow}[WHoW]{Why-How-Who}
-	\acro{awry}[AWRY]{Convs. Gone Awry}
-	\acro{cmv}[CMV II]{Change My View}
-	\acro{wt}[WT]{WikiTactics}
-	\acro{cot}[CoT]{Chain of Thought}
-\end{acronym}
+\printacronyms
 
 
 \section{Dataset details}
@@ -635,7 +629,7 @@ Proprietary LLMs such as the OpenAI GPT family may perform better, but cost seve
 
 Table~\ref{tab:llm-details} shows details on the LLMs used for this study. We specifically use 4-bit quantized versions from the \texttt{unsloth huggingface} repository.
 
-\begin{table}[ht]
+\begin{table}[t]
 	\centering
 	\begin{tabular}{l l l}
 		\toprule
@@ -797,7 +791,7 @@ To efficiently calculate intra-participant consistency, we transform the fine-gr
 
 \begin{figure}[t]
 	\centering
-	\includegraphics[width=\columnwidth]{dataset_freqs.pdf}
+	\includegraphics[width=\columnwidth]{per_dataset_distribution.png}
 	\caption{Label distributions of human participants per dataset.}
 	\label{fig:label_distribution_dataset}
 \end{figure}
