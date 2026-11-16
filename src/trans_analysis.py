@@ -49,7 +49,7 @@ def plot_metrics(df):
     fig, ax = plt.subplots()
 
     # Colorblind-friendly palette
-    palette = sns.color_palette("colorblind", 3)
+    palette = util.graphs.COLORBLIND_PALETTE
 
     # Plot lines
     sns.lineplot(
@@ -75,8 +75,8 @@ def plot_metrics(df):
         )
 
     # Labels and limits
-    ax.set_xlabel("Threshold", fontsize=12)
-    ax.set_ylabel("Score", fontsize=12)
+    ax.set_xlabel("Threshold")
+    ax.set_ylabel("Score")
     ax.set_xlim(-0.01, 1.1)
     ax.set_ylim(0, 1.1)
 

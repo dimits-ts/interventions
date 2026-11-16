@@ -214,8 +214,8 @@ def grouped_legend(ax, datasets_in_plot, **legend_kwargs):
                 )
             )
 
-    _add_section("Written:", written_in_plot)
-    _add_section("Spoken:", spoken_in_plot)
+    _add_section(r"\textbf{Written}:", written_in_plot)
+    _add_section(r"\textbf{Spoken}:", spoken_in_plot)
 
     defaults = dict(
         handlelength=1.5,
@@ -227,9 +227,7 @@ def grouped_legend(ax, datasets_in_plot, **legend_kwargs):
     legend = ax.legend(handles=handles, **{**defaults, **legend_kwargs})
 
     for text, handle in zip(legend.get_texts(), legend.legend_handles):
-        if text.get_text() in ("Written:", "Spoken:"):
-            text.set_fontweight("bold")
-            text.set_color("#333333")
+        if text.get_text() in (r"\textbf{Written}:", r"\textbf{Spoken}:"):
             handle.set_visible(False)
 
 
@@ -283,7 +281,7 @@ def moderation_plot(disc_mod: pd.DataFrame, graph_dir: Path) -> None:
     apply_hatches_to_histplot(ax, order)  # reuse the same patch-walker
 
     ax.set_ylabel("Dataset")
-    ax.set_xlabel("Overall ratio (%) of facilitator comments")
+    ax.set_xlabel(r"Overall ratio (\%) of facilitator comments")
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     grouped_legend(
@@ -319,7 +317,7 @@ def comments_per_discussion_plot(
     ax.set_xticklabels(["0", "100", "200", "300", "400", "500+"])
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    plt.xlabel("#Comments per discussion")
+    plt.xlabel(r"\#Comments per discussion")
     plt.ylabel("Density (stacked)")
 
     grouped_legend(ax, set(hue_order))
@@ -351,7 +349,7 @@ def words_per_comment_plot(
     ax.set_xticklabels(["0", "100", "200", "300", "400", "500+"])
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
-    plt.xlabel("#Words per comment")
+    plt.xlabel(r"\#Words per comment")
     plt.ylabel("Density (stacked)")
 
     grouped_legend(ax, set(hue_order))

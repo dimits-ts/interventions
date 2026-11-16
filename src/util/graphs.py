@@ -142,23 +142,14 @@ def seaborn_setup() -> None:
             "savefig.dpi": 300,
             "savefig.bbox": "tight",
             "savefig.pad_inches": 0.02,
-            # Fonts
-            # Same fonts as the ACM acmart class: Linux Libertine for text,
-            # newtxmath (Libertine variant) for math. With usetex the font
-            # comes from the LaTeX preamble below; font.serif only names a
-            # font matplotlib knows for usetex, so it does not log "No
-            # LaTeX-compatible font found". The preamble loads after it.
             "font.family": "serif",
-            "font.serif": ["Computer Modern Roman"],
-            "text.latex.preamble": (
-                r"\usepackage[tt=false,type1=true]{libertine}"
-                r"\usepackage[libertine]{newtxmath}"
-            ),
+            # times new roman
+            "text.latex.preamble": r"\usepackage{newtxtext,newtxmath}",
             "font.size": 18,
-            "axes.titlesize": 24,
+            "axes.titlesize": 26,
             "axes.labelsize": 22,
-            "xtick.labelsize": 14,
-            "ytick.labelsize": 14,
+            "xtick.labelsize": 20,
+            "ytick.labelsize": 20,
             "legend.fontsize": 22,
             "legend.title_fontsize": 22,
             "figure.titlesize": 26,
@@ -174,8 +165,8 @@ def seaborn_setup() -> None:
             # Ticks
             "xtick.direction": "in",
             "ytick.direction": "in",
-            "xtick.major.size": 4,
-            "ytick.major.size": 4,
+            "xtick.major.size": 16,
+            "ytick.major.size": 16,
             "xtick.major.width": 0.8,
             "ytick.major.width": 0.8,
             "xtick.minor.visible": True,
@@ -188,7 +179,7 @@ def seaborn_setup() -> None:
             "legend.loc": "best",
             # Math text
             "mathtext.fontset": "cm",
-            # PDF/PS output (important for LaTeX + journals)
+
             "pdf.fonttype": 42,
             "ps.fonttype": 42,
         }

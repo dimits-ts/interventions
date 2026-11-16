@@ -322,6 +322,7 @@ def plot_combined_llm_barplot(
         data=plot_df,
         x="response",
         hue="model",
+        palette=util.graphs.COLORBLIND_PALETTE
     )
 
     ax.set_xticks([0, 1])
@@ -333,7 +334,7 @@ def plot_combined_llm_barplot(
     plt.xlabel("LLM Response")
     plt.ylabel("Count")
     plt.title(
-        f"LLM Binary Response Distribution – " f"{task_name.capitalize()}"
+        f"LLM Binary Response Distribution - " f"{task_name.capitalize()}"
     )
 
     plt.tight_layout()

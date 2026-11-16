@@ -15,8 +15,8 @@ python src/dataset_analysis.py \
     --cache-dir cache
 
 python src/llm_test.py \
-    --annotation-dir data/llm_output \
-    --output-dir data/llm_output \
+    --annotation-dir data/llm_output/main \
+    --output-dir data/llm_output/main \
     --graph-dir graphs
 
 python src/trans_analysis.py \
@@ -30,6 +30,6 @@ python src/trans_analysis.py \
     --tables-dir manuscript/generated/detection
 
 python src/judgement_analysis.py \
-    --annotation-dir data/llm_output \
+    --annotation-dir data/llm_output/main \
     --graph-dir graphs \
     --cache-dir cache
