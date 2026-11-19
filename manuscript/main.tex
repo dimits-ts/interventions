@@ -152,7 +152,8 @@ In current literature, it is generally accepted that all comments made by a faci
 
 \begin{definition}[Human judgment]
 	\label{def:facilitative}
-	Facilitation should only occur when the majority agree that it is necessary.
+	Facilitation should only occur when observers 
+	agree that it is necessary.\footnote{In our study and in \citet{schaffner_community_guidelines}, we mean outside observers, although it could be observers within the discussion.}
 \end{definition}
 
 There is an argument to be made that professional facilitators can make more accurate judgments due to expertise. However, in reality most facilitation is handled by either volunteers elevated to the position by their community~\cite{schaffner_community_guidelines}, or by the users themselves in an ad-hoc fashion~\cite{umod}. In this case, the task is no longer about detecting or predicting whether \emph{a facilitator would speak}, but rather the much more difficult and subjective task of whether the comment is \emph{facilitative in nature}.
@@ -179,7 +180,7 @@ There is an argument to be made that professional facilitators can make more acc
 
 \subsection{Determining When to Facilitate}
 \label{sec:how_to_determine}
-	
+
 \paragraph{Using models}
 %While automated content moderation is widespread on social media platforms, automated facilitation is a topic currently exclusive to academic research~\cite{korre-etal-2025-evaluation}. 
 The only work to our knowledge that has explicitly attempted to predict facilitative interventions~\citep{falk-etal-2021-predicting} uses \ac{eo} classifiers on a single dataset--\acs{ceri}~\citep{ceri}--with modest performance. Indeed, these classifiers have proven competent in the context of escalation prediction~\cite{cmv_awry2,Yuan_Singh_2023}, and facilitative tactics detection~\citep{chen-etal-2025-whow, schroeder-etal-2024-fora}. Recent work~\cite{schroeder-etal-2024-fora, chen-etal-2025-whow} uses LLM-as-a-judge models to annotate data in the field of facilitation, although recent research suggests that fully-automated facilitation is still out of our reach \cite{korre-etal-2025-evaluation}.
@@ -215,13 +216,13 @@ Most platforms hold users responsible for maintaining the quality of discussion 
 	\label{tab:datasets}
 \end{table*}
 
-Since there is currently no dataset that explicitly concerns itself with facilitation interventions, we construct the ``\acf{pefk}'' dataset, a standardized, multi-domain compilation of the facilitation-related datasets listed by \citet{korre-etal-2025-evaluation} (see Table~\ref{tab:datasets}). \ac{pefk} contains data from both online forums and oral discussions,\footnote{The differences between different domains and modalities (transcripts vs. written comments) are analyzed in App.~\ref{sec:app:dataset:exploratory}.} and standardizes metadata, metrics, and labeling schemes according to a simple, unified schema, making it suitable as a benchmark on facilitator interventions.\footnote{Information on preprocessing steps and dataset schema can be found in App.~\ref{sec:app:dataset}.} The constituent datasets described below straddle all three definitions described in \S\ref{sec:related:interventions}.\footnote{Including escalation and toxicity, as used in Def.~\ref{def:escalation}, although this information is not utilized in this study.} 
+Since there is currently no dataset that explicitly concerns itself with facilitation interventions, we construct the ``\acf{pefk}'' dataset, a standardized, multi-domain compilation of the facilitation-related datasets listed by \citet{korre-etal-2025-evaluation} (see Table~\ref{tab:datasets}). \ac{pefk} contains data from both online forums and oral discussions,\footnote{The differences between different domains and modalities (transcripts vs. written comments) are analyzed in App.~\ref{app:dataset:exploratory}.} and standardizes metadata, metrics, and labeling schemes according to a simple, unified schema, making it suitable as a benchmark on facilitator interventions.\footnote{Information on preprocessing steps and dataset schema can be found in App.~\ref{app:dataset}.} The constituent datasets described below straddle all three definitions described in \S\ref{sec:related:interventions}.\footnote{Including escalation and toxicity, as used in Def.~\ref{def:escalation}, although this information is not utilized in this study.} 
 
 \paragraph{Wikipedia} The WikiConv \citep{wikiconv} dataset is the largest collection of discussions among Wikipedia contributors who may request arbitration by a \emph{volunteer facilitator}. \ac{wt} \citep{wikitactics}, \ac{awry} \citep{cmv_awry2} and WikiDisputes \citep{wikidisputes} are smaller subsets of WikiConv which include additional meta-data information and annotations. The structure of these discussions are ideal for Def.~\ref{def:escalation}, which is why only \ac{wt} includes enough information to be usable for studying facilitation on a deeper level (Def.~\ref{def:facilitator}).
 
 \paragraph{Social Media} The \ac{cmv} \citep{cmv_awry2} and \ac{umod} \citep{umod} datasets are both collected from Reddit, although they answer completely different questions. Like WikiConv, \ac{cmv} looks for discussion escalation by looking for moderation artifacts (here, content moderation in a comment chain) by \emph{volunteer facilitators}. In contrast, \ac{umod} looks for these facilitators via third-party annotation, according to Def.~\ref{def:facilitative}.
 
-\paragraph{Professional Facilitation} In some specialized domains a trained, professional facilitator is present, although their role may vary depending on the specific context of each dataset. In \ac{ceri}, the facilitators were trained by the researchers according to their own developed protocol for deliberation and consensus-building. The same applies for the Fora dataset \citep{schroeder-etal-2024-fora}\footnote{Although, notably, the level and objectives of this training are not described in the paper.} On the other hand, the facilitators in \ac{whow} and \ac{iq2} are experienced debate hosts (in radio and formal debates respectively).\footnote{Note that some \ac{iq2} debates are also present in \ac{whow}, which is handled in the preprocessing step (App.~\ref{sec:app:dataset:preprocessing}).} These datasets define facilitation according to Def.~\ref{def:facilitator}.
+\paragraph{Professional Facilitation} In some specialized domains a trained, professional facilitator is present, although their role may vary depending on the specific context of each dataset. In \ac{ceri}, the facilitators were trained by the researchers according to their own developed protocol for deliberation and consensus-building. The same applies for the Fora dataset \citep{schroeder-etal-2024-fora}\footnote{Although, notably, the level and objectives of this training are not described in the paper.} On the other hand, the facilitators in \ac{whow} and \ac{iq2} are experienced debate hosts (in radio and formal debates respectively).\footnote{Note that some \ac{iq2} debates are also present in \ac{whow}, which is handled in the preprocessing step (App.~\ref{app:dataset:preprocessing}).} These datasets define facilitation according to Def.~\ref{def:facilitator}.
 
 
 \section{Do Humans and LLMs Intervene at Similar Circumstances?}
@@ -233,7 +234,7 @@ To support a systematic investigation of facilitative behavior under Def.~\ref{d
 \subsection{Facilitative Survey}
 \label{sec:annotation:experimental}
 
-\paragraph{Labels} To avoid turning facilitation into a moderation task (i.e., using reactive responses after unwanted comments/utterances), we introduce two types of interventions: positive and negative reinforcement. \emph{Positive reinforcement}, aims to encourage or reward constructive behavior (e.g., expressing appreciation or affirming contributions), while \emph{negative reinforcement}, aims to discourage undesirable behavior or guide interlocutors back to productive discourse (e.g., addressing incivility or off-topic comments). This distinction represents a tool through which we ensured the survey participants did not default to content moderation, which we frequently observed during discussions with them, and during pilot survey rounds--it does not represent a theoretical contribution. Nevertheless, it provides an extra signal which we utilize in our analysis.\footnote{There is some theoretical grounding for using this approach is described in App.~\ref{sec:app:human-annotation:positive-vs-negative}. Similarly, \citet{falk-etal-2021-predicting} use high and low Argument Quality for further analysis of facilitation prediction, although, unlike their approach, we obtain the explanatory signal directly from the survey participants, rather than established \ac{eo} models.} We adopt an ordinal scale approach, where the survey participants rate each dialogue for either type of reinforcement (positive or negative), as well as the possibility of no reinforcement using a scale from 1 to 5.\footnote{In order to transform the multiple ordinal labels into an easily manageable form for the purposes of analysis, we transform them into a single multiclass label schema as described in App.~\ref{sec:app:human-annotation:label-transform}.}
+\paragraph{Labels} To avoid turning facilitation into a moderation task (i.e., using reactive responses after unwanted comments/utterances), we introduce two types of interventions: positive and negative reinforcement. \emph{Positive reinforcement}, aims to encourage or reward constructive behavior (e.g., expressing appreciation or affirming contributions), while \emph{negative reinforcement}, aims to discourage undesirable behavior or guide participants back to productive discourse (e.g., addressing incivility or off-topic comments). This distinction is just a tool through which we ensured the survey participants did not default to content moderation, which we frequently observed during discussions with them and during pilot survey rounds. It does not represent a theoretical contribution but provides an extra signal which we utilize in our analysis.\footnote{There is some theoretical grounding for using this approach is described in App.~\ref{app:human-annotation:positive-vs-negative}. Similarly, \citet{falk-etal-2021-predicting} use high and low Argument Quality for further analysis of facilitation prediction, although, unlike their approach, we obtain the explanatory signal directly from the survey participants, rather than established \ac{eo} models.} We adopt an ordinal scale approach during annotation, where the survey participants rate each dialogue for either \texttt{Positive}, \texttt{Negative} or \texttt{No} reinforcement using a scale from 1 to 5.\footnote{These are later aggregated to four categories: \texttt{Positive}, \texttt{Negative}, \texttt{Both} and \texttt{None}. See App.~\ref{app:labels} for the exact motivations and mapping of facilitative intervention definitions throughout this study.}
 
 \paragraph{Data}
 We randomly split multi-party discussions from the \ac{pefk} dataset into small chunks containing a set amount of comments (6 comments per discussion), and select a random sample for the survey (1224 discussions--721 remained after the participants flagged some excerpts as malformed). This design aims to replicate a known limitation in online asynchronous facilitation scenarios; the facilitator is expected to decide on a course of action considering only the last parts of a discussion, as shown by several studies~\citep{hewitt2003habitual, park2016supporting, kumpel2021does}. In the case of oral discussions, there is evidence to suggest that the most recent comments are given relatively greater importance~\citep{crano1977primacy, cockburn2017effects}.
@@ -243,14 +244,14 @@ We randomly split multi-party discussions from the \ac{pefk} dataset into small 
 We recruited 11 experts on Computational Social Science with extensive experience with NLP tasks from sentiment analysis to persuasion strategy detection. 
 We preferred expert instead of crowdsourced participants as the task is highly technical, subjective, and mentally demanding. Additionally, crowdsourced participants have been shown to exhibit more bias in general~\citep{snow-etal-2008-cheap, waseem-2016-racist}, which concerned us since we tried to avoid confusion with content moderation--a better known task. Our concerns were validated when preliminary discussions with participants revealed that they indeed considered their task to be content moderation.
 
-The gender distribution was relatively balanced with 4 men and 7 women, while their ages had a median of 30 years. Before the commencement of the survey, the participants completed an agreement form in compliance with GDPR~\citep{GDPR} ethical requirements and were compensated in accordance with national legislation. More information about the participant selection can be found in App.~\ref{sec:app:participants_select}.
+The gender distribution was relatively balanced with 4 men and 7 women, while their ages had a median of 30 years. Before the commencement of the survey, the participants completed an agreement form in compliance with GDPR~\citep{GDPR} ethical requirements and were compensated in accordance with national legislation. More information about the participant selection can be found in App.~\ref{app:participants_select}.
 
 \paragraph{Survey Procedure} 
-Unlike prior work that sought to establish consensus among facilitators~\cite{umod, schroeder-etal-2024-fora, chen-etal-2025-whow}, our goal is instead to explore facilitation patterns without presuming that such a consensus exists. Indeed, facilitation is a highly subjective task, and substantial disagreements persist even among experienced professionals operating within the same communities and under the same rule-sets~\citep{vinay2024_venire}; consensus remains elusive even in cases where the task is less ambiguous and the dataset more focused~\citep{schroeder-etal-2024-fora}.\footnote{During the survey, we inserted duplicated entries in secret to estimate consistency, finding that all-but-one participants remained 100\% consistent in their judgments during the task--see App.~\ref{sec:app:human-annotation:intra-agreement}.}
+Unlike prior work that sought to establish consensus among facilitators~\cite{umod, schroeder-etal-2024-fora, chen-etal-2025-whow}, our goal is instead to explore facilitation patterns without presuming that such a consensus exists. Indeed, facilitation is a highly subjective task, and substantial disagreements persist even among experienced professionals operating within the same communities and under the same rule-sets~\citep{vinay2024_venire}; consensus remains elusive even in cases where the task is less ambiguous and the dataset more focused~\citep{schroeder-etal-2024-fora}.\footnote{During the survey, we inserted duplicated entries in secret to estimate consistency, finding that all-but-one participants remained 100\% consistent in their judgments during the task--see App.~\ref{app:human-annotation:intra-agreement}.}
 
-Before the survey, the participants were given a training task where they categorized facilitative tactics according to established taxonomies on \ac{pefk} (see App.~\ref{sec:app:human-annotation:tactics}) and given ample resources and time to familiarize themselves with online facilitation. We felt that training was a necessary step in order to disambiguate facilitation from content moderation after preliminary discussions with the participants. While it could in principle bias the participants, we attempted to control potential bias by strictly limiting the training scope to strategies only; there was no implicit or explicit input regarding the timing or flow of conversation (see App.~\ref{sec:app:human-annotation}).
+Before the survey, the participants were given a training task where they categorized facilitative tactics according to established taxonomies on \ac{pefk} (see App.~\ref{app:human-annotation:tactics}) and given ample resources and time to familiarize themselves with online facilitation. We felt that training was a necessary step in order to disambiguate facilitation from content moderation after preliminary discussions with the participants. While it could in principle bias the participants, we attempted to control potential bias by strictly limiting the training scope to strategies only; there was no implicit or explicit input regarding the timing or flow of conversation (see App.~\ref{app:human-annotation}).
 
-The main survey task required the participants to rate instances from \ac{pefk} by determining whether, at any point within a specific discussion chunk, reinforcement was needed, as well as what kind. The participants could optionally add rationales with which they could justify their rating. The full survey guidelines can be found in App.~\ref{sec:app:guidelines}. We ran two pilot surveys to clear up misunderstandings around the task and incorporate participant feedback, before executing the main task. Additionally, we conducted one-on-one interviews and weekly group meetings concurrently with the main task. More details can be found in App.~\ref{sec:app:participants_select}. 
+The main survey task required the participants to rate instances from \ac{pefk} by determining whether, at any point within a specific discussion chunk, reinforcement was needed, as well as what kind. The participants could optionally add rationales with which they could justify their rating. The full survey guidelines can be found in App.~\ref{app:guidelines}. We ran two pilot surveys to clear up misunderstandings around the task and incorporate participant feedback, before executing the main task. Additionally, we conducted one-on-one interviews and weekly group meetings concurrently with the main task. More details can be found in App.~\ref{app:participants_select}. 
 
 \paragraph{LLM Survey}
 We use only open-source models, as proprietary ones yield much less reproducible results~\citep{bisbee_2023}. Additionally, while proprietary LLMs may perform better, they are not scalable both for research and for real-world deployment due to pricing. Open-source models are also mandated, as part of our dataset (Fora) is not licensed, and to ensure anonymity, as the constituent datasets may contain personal data from  the use of local models protects the personal data of the users contained in our datasets~\cite{eu_ai_act, GDPR}. We use 4-bit quantized versions from the \texttt{unsloth huggingface} repository. We select models on the basis of prior use in research tasks, model age (younger is better), and availability in the aforementioned repository; specifically \texttt{OLMo 2 \{7B, 32B\}}, \texttt{Qwen 2.5 \{7B, 32B\}} and \texttt{LLaMa 3.3 \{8B, 70B\}}. We use zero-shot prompting since no concrete definition of facilitation exists~\citep{korre-etal-2025-evaluation}, and the examples would have to be different for each discussion domain in \ac{pefk}.
@@ -268,9 +269,9 @@ We use only open-source models, as proprietary ones yield much less reproducible
 
 %Since our task is inherently subjective, with no established rules dictating when an intervention should occur, we abandon the traditional \ac{ml} approach of obtaining a ground-truth and filtering out ``wrong'' judgments, and instead attempt to identify general facilitative patterns.
 
-\paragraph{Humans make cautious facilitators}
+\paragraph{Humans tend to be cautious facilitators}
 The main dilemma around facilitative timing is determining whether the facilitator prioritizes preventing potentially harmful speech, or letting the conversation
-continue naturally (Fig.~\ref{fig:intro}).	According to Fig.~\ref{fig:freqs_annotators}, most participants generally remain conservative--most choose not to intervene in a large majority of cases, although some (e.g., A3, A8, and A9) exhibit comparatively more proactive behavior with higher rates of positive interventions.\footnote{One participant (A1) did not complete the task and was therefore not considered for the analysis.} Positive-intervention rates also appear to cluster around two broad ranges (approximately 20–30\% and 35–40\%), which is consistent with the tendencies of professional facilitators observed in the original dataset (see Fig.~\ref{fig:moderation-perc}; App.~\ref{sec:app:dataset:schema}).\footnote{These observations are consistent across datasets--see App.~\ref{sec:app:human-annotation:datasets}--reinforcing our motivation of transferring observations from oral datasets to online, written facilitation.} 
+continue naturally (Fig.~\ref{fig:intro}).	According to Fig.~\ref{fig:freqs_annotators}, most participants generally remain conservative--most choose not to intervene in a large majority of cases, although some (e.g., A3, A8, and A9) exhibit comparatively more proactive behavior with higher rates of positive interventions.\footnote{One participant (A1) did not complete the task and was therefore not considered for the analysis.} Positive-intervention rates also appear to cluster around two broad ranges (approximately 20–30\% and 35–40\%), which is consistent with the tendencies of professional facilitators observed in the original dataset (see Fig.~\ref{fig:moderation-perc}; App.~\ref{app:dataset:schema}).\footnote{These observations are consistent across datasets--see App.~\ref{app:human-annotation:datasets}--reinforcing our motivation of transferring observations from oral datasets to online, written facilitation.} 
 
 \begin{figure}[!t]
 	\centering
@@ -308,7 +309,7 @@ To qualitatively understand the sources of divergence in human facilitative patt
 \begin{figure}[t]
 	\centering
 	\includegraphics[width=1\linewidth]{extreme_cases_heatmap.png}
-	\caption{Top 5 discussion instances where the LLM majority vote disagrees with all human participants. Y-axis is the discussion index. Labels follow the survey schema described in App.~\ref{sec:app:human-annotation:positive-vs-negative}: POS = Positive Reinforcement, NEG = Negative Reinforcement, BOTH = Both Positive and Negative Reinforcement, and NO = No Reinforcement, ---: Missing Annotation.}
+	\caption{Top 5 discussion instances where the LLM majority vote disagrees with all human participants. Y-axis is the discussion index. Labels follow the survey schema described in App.~\ref{app:human-annotation:positive-vs-negative}: POS = Positive Reinforcement, NEG = Negative Reinforcement, BOTH = Both Positive and Negative Reinforcement, and NO = No Reinforcement, ---: Missing Annotation.}
 	\label{fig:extremes_heatmap}
 \end{figure}
 
@@ -388,7 +389,7 @@ Examining the five examples qualitatively, we see that all cases regard a narrat
 		\midrule
 		\bottomrule
 	\end{tabular}
-	\caption{Facilitator prediction results for models that did not collapse (F1$_p$ or F1$_n$ falls below 0.15, see Table~\ref{tab:facilitator-prediction-collapsed} in App.~\ref{sec:appendix:experiments}). Positive-class precision, recall and F1 (F1$_p$), and negative-class F1 (F1$_n$). Best F1$_p$ and F1$_n$ values for each dataset split are highlighted in bold. ``All'' rows report macro averages across all models, including collapsed ones.}
+	\caption{Facilitator prediction results for models that did not collapse (F1$_p$ or F1$_n$ falls below 0.15, see Table~\ref{tab:facilitator-prediction-collapsed} in App.~\ref{app:experiments}). Positive-class precision, recall and F1 (F1$_p$), and negative-class F1 (F1$_n$). Best F1$_p$ and F1$_n$ values for each dataset split are highlighted in bold. ``All'' rows report macro averages across all models, including collapsed ones.}
 	\label{tab:facilitator-prediction}
 \end{table}
 
@@ -401,7 +402,7 @@ Examining the five examples qualitatively, we see that all cases regard a narrat
 
 \paragraph{\ac{eo} Models} We fine-tune a pretrained transformer encoder (\texttt{ModernBert-large}). Training is conducted using the Hugging Face \texttt{Trainer}, weighting the loss function to account for class imbalance and only finetuning the classification head. To improve computational efficiency, we use batches of 64 texts of similar length for 80 epochs and apply early stopping with a warm-up phase. Data loading uses 4 worker processes, and GPU acceleration is utilized when available. We fix the random seed to ensure reproducibility. We use a single Quadro RTX 6000 GPU for the classifier and two GPUs for the LLMs, collectively requiring about 72 hours of computation. 
 
-\paragraph{Ablations} An identical setup is used for an ablation \ac{nlu} task showing that the models can be used to detect whether a comment was made by a professional facilitator to a degree.\footnote{\citet{schroeder-etal-2024-fora} feature detection scores in the 0.7-0.9 F1 range, significantly outperforming our own models. However, we were not able to reproduce these results given their \ac{eo} model setup. While the authors acknowledged our requests for clarifications in their training and evaluation setup, we have not received any.} Another ablation study compares training separate \ac{eo} models for oral and written datasets instead of a single model for both, showing that using a single model across all datasets shows reduced performance (App.~\ref{sec:appendix:experiments:one-model}), and informing our training setup. Finally, we verify that our LLM-survey setup is not influenced by prompt sensitivity via the ablations shown in App.~\ref{sec:appendix:experiments:ablations}.
+\paragraph{Ablations} An identical setup is used for an ablation \ac{nlu} task showing that the models can be used to detect whether a comment was made by a professional facilitator to a degree.\footnote{\citet{schroeder-etal-2024-fora} feature detection scores in the 0.7-0.9 F1 range, significantly outperforming our own models. However, we were not able to reproduce these results given their \ac{eo} model setup. While the authors acknowledged our requests for clarifications in their training and evaluation setup, we have not received any.} Another ablation study compares training separate \ac{eo} models for oral and written datasets instead of a single model for both, showing that using a single model across all datasets shows reduced performance (App.~\ref{app:experiments:one-model}), and informing our training setup. Finally, we verify that our LLM-survey setup is not influenced by prompt sensitivity via the ablations shown in App.~\ref{app:experiments:ablations}.
 
 
 \subsection{Findings}
@@ -422,7 +423,7 @@ Examining the five examples qualitatively, we see that all cases regard a narrat
 
 \paragraph{Do LLMs Over or Under-Intervene?}  LLM behavior in facilitation is polarized: some models exhibit a pervasive tendency to constantly facilitate (reflected by extremely low $F1_n$). Conversely, we observe that other models rarely intervene (evidenced by extremely low $F1_p$--both crossed out in Table~\ref{tab:facilitator-prediction}), a behavior that has been largely overlooked in the existing literature. Interestingly, this pattern also varies by domain; most LLMs tend to under-facilitate in non-forum domains, and over-facilitate in \ac{wt}, the only dataset featuring a traditional forum structure, as shown in Fig.~\ref{fig:prediction-by-domain}. We hypothesize that  this discrepancy is caused by \ac{wt} being the only dataset considered in this study specifically containing escalating discussions, which likely triggers LLM interventions. Human facilitators do not seem to be influenced by the escalating discussions however (Fig.~\ref{fig:prediction-by-domain}), indicating that LLMs may be hyper-sensitive to unsafe speech because of their extensive alignment procedures.
 
-\paragraph{Are \ac{eo} Models the Solution?} We find that the ModernBert classifiers can generally compete with LLMs in this task, and seem much more consistent, outperforming them in three out of the five datasets, and scoring the highest $F1_p$ scores across all datasets. We posit that overall, these classifiers may be a much more scalable, reliable and viable solution compared to LLMs for the task, even though they have been overlooked in current literature.\footnote{Another notable advantage of these models is that we can tune the precision-recall trade-off by adjusting the probability threshold over which the model determines that an intervention should happen, thus configuring how proactive or cautious they are, see App.~\ref{sec:appendix:experiments:thresholds}.}
+\paragraph{Are \ac{eo} Models the Solution?} We find that the ModernBert classifiers can generally compete with LLMs in this task, and seem much more consistent, outperforming them in three out of the five datasets, and scoring the highest $F1_p$ scores across all datasets. We posit that overall, these classifiers may be a much more scalable, reliable and viable solution compared to LLMs for the task, even though they have been overlooked in current literature.\footnote{Another notable advantage of these models is that we can tune the precision-recall trade-off by adjusting the probability threshold over which the model determines that an intervention should happen, thus configuring how proactive or cautious they are, see App.~\ref{app:experiments:thresholds}.}
 
 \begin{finding}
 	\label{finding:llms-may-facilitate}
@@ -474,7 +475,7 @@ We used LLMs for some orthographic and grammatical support throughout the docume
 
 
 \section{Dataset Details}
-\label{sec:app:dataset}
+\label{app:dataset}
 
 \begin{table*}[t]
 	\centering
@@ -503,7 +504,7 @@ We used LLMs for some orthographic and grammatical support throughout the docume
 
 
 \subsection{Preprocessing}
-\label{sec:app:dataset:preprocessing}
+\label{app:dataset:preprocessing}
 
 \paragraph{General}
 \begin{itemize}
@@ -557,7 +558,7 @@ We used LLMs for some orthographic and grammatical support throughout the docume
 
 
 \subsection{Schema}
-\label{sec:app:dataset:schema}
+\label{app:dataset:schema}
 
 \begin{figure}[t]
 	\includegraphics[width=\columnwidth]{analysis_moderation_perc.png}
@@ -569,7 +570,7 @@ Table~\ref{tab:dataset-columns} details the information available for each comme
 
 
 \subsection{Exploratory Data Analysis}
-\label{sec:app:dataset:exploratory}
+\label{app:dataset:exploratory}
 
 \begin{figure*}[!t]
 	\includegraphics[width=\columnwidth]{analysis_comments_per_discussion.png}
@@ -579,9 +580,9 @@ Table~\ref{tab:dataset-columns} details the information available for each comme
 \end{figure*}
 
 \paragraph{Oral vs. Written Datasets in PEFKI}	
-There currently exists a rift in facilitation research; while some previous work concerns itself with forums and online discussions~\citep{ceri}, others are exclusively focused on live, real-life, oral discussions~\citep{schroeder-etal-2024-fora, chen-etal-2025-whow}. This rift is an issue for facilitation research, since oral and online written discussions feature fundamentally different kinds of facilitation interventions, as shown by stark differences in proposed facilitation schemas between online forums~\citep{ceri}, and real-life discussions~\citep{schroeder-etal-2024-fora, chen-etal-2025-whow}. Additionally, the data themselves are different; posts and comments are self-contained, while transcripts regularly feature interruptions, participants talking in parallel (see App.~\ref{sec:app:dataset:exploratory}), and linguistic features that are necessary for coordination (e.g., ``Thank you.'', ``I agree.''). It is worth noting that in our case, all written discussions are asynchronous (the participants may join and leave at any time), while all oral discussions are synchronous (the participants are all active at the same time).
+There currently exists a rift in facilitation research; while some previous work concerns itself with forums and online discussions~\citep{ceri}, others are exclusively focused on live, real-life, oral discussions~\citep{schroeder-etal-2024-fora, chen-etal-2025-whow}. This rift is an issue for facilitation research, since oral and online written discussions feature fundamentally different kinds of facilitation interventions, as shown by stark differences in proposed facilitation schemas between online forums~\citep{ceri}, and real-life discussions~\citep{schroeder-etal-2024-fora, chen-etal-2025-whow}. Additionally, the data themselves are different; posts and comments are self-contained, while transcripts regularly feature interruptions, participants talking in parallel (see App.~\ref{app:dataset:exploratory}), and linguistic features that are necessary for coordination (e.g., ``Thank you.'', ``I agree.''). It is worth noting that in our case, all written discussions are asynchronous (the participants may join and leave at any time), while all oral discussions are synchronous (the participants are all active at the same time).
 
-Figure~\ref{fig:dataset-stats} shows some of the differences of oral and written datasets. Oral datasets feature a significantly larger number of comments per discussion, since instances where the participants talk over each other, or interrupt the other are transcribed as separate comments. Additionally, oral datasets feature a large amount of comments with very few words, since a lot of utterances are short but necessary for social co-ordination (e.g., ``Thank you'', ``Yes'', ``I agree''). Figure~\ref{fig:moderation-perc} shows the percentage of comments made by facilitators for each of our datasets. In almost all datasets, a third of the comments are made by facilitators.\footnote{We do not include the \ac{umod} dataset, since there is no established ground-truth (see App.~\ref{sec:app:dataset:preprocessing}).}
+Figure~\ref{fig:dataset-stats} shows some of the differences of oral and written datasets. Oral datasets feature a significantly larger number of comments per discussion, since instances where the participants talk over each other, or interrupt the other are transcribed as separate comments. Additionally, oral datasets feature a large amount of comments with very few words, since a lot of utterances are short but necessary for social co-ordination (e.g., ``Thank you'', ``Yes'', ``I agree''). Figure~\ref{fig:moderation-perc} shows the percentage of comments made by facilitators for each of our datasets. In almost all datasets, a third of the comments are made by facilitators.\footnote{We do not include the \ac{umod} dataset, since there is no established ground-truth (see App.~\ref{app:dataset:preprocessing}).}
 
 \paragraph{Vocabulary discrepancies in PEFKI}
 We also the data to include only messages written by moderators, then cleaned the text by removing URLs, punctuation, and other noise. After preprocessing, we used a TF-IDF vectorization approach with n-grams (bigrams and trigrams) to extract phrases. Crucially, the TF-IDF model was trained on all datasets combined, so that common, generic phrases were downweighted while phrases that are more distinctive to each dataset were emphasized. We then computed the average TF-IDF score of each phrase within each dataset and selected the top-ranking ones as representative expressions of moderator language in that context. The results can be found in Figure~\ref{fig:pefk_words}.
@@ -595,11 +596,49 @@ The most important phrases in \ac{ceri} suggest a formal, policy-oriented enviro
 \end{figure}
 
 
-\section{Additional Experiments}
-\label{sec:appendix:experiments}
+\section{Facilitative Labels Through the Study}
+\label{app:labels}
+
+\begin{figure}[t]
+	\includegraphics[width=\columnwidth]{labels.drawio.png}
+	\caption{Facilitative labels throughout the different parts of this study. Parrot image taken from \url{https://svgsilh.com/image/1636483.html}, released under CC0.}
+	\label{fig:labels}
+\end{figure}
+
+\begin{table}[t]
+	\centering
+	\begin{tabular}{cccc}
+		\toprule
+		\textbf{Positive} & \textbf{Negative} & \textbf{Neither} & \textbf{Final} \\
+		\midrule
+		\xmark & \xmark & \xmark & None (0) \\
+		\cmark & \xmark & \xmark & Positive (1) \\
+		\xmark & \cmark & \xmark & Negative (2) \\
+		\xmark & \xmark & \cmark & None (0) \\
+		\cmark & \cmark & \xmark & Both (3) \\
+		\cmark & \xmark & \cmark & Positive (1) \\
+		\xmark & \cmark & \cmark & Negative (2) \\
+		\cmark & \cmark & \cmark & Both (3) \\
+		\bottomrule
+	\end{tabular}
+	\caption{Reinforcement label transformations.}
+	\label{tab:label_transform}
+\end{table}
+
+While the main research question of this paper (``When do we facilitate'') is a clear binary decision (we either intervene, or we do not), in practical terms, we had to analyze this question in different ways throughout this study. Fig.~\ref{fig:labels} shows which definitions have been used for each step of this study.
+
+\paragraph{Binary Labels} The binary decision is well-defined for the facilitative prediction experiments shown in \S\ref{sec:facilitator} (as well as those of facilitative detection in App.~\ref{app:experiments:facilitator}), as the model needs to make a single decision based on Def.~\ref{def:facilitator}. 
+
+\paragraph{Positive vs. Negative} On the other hand, \S\ref{sec:annotation} uses Def.~\ref{def:facilitative}, and as such requires a solid understanding of the goals of facilitative interventions. Because of our participant's bias towards negative interventions (as discussed in \S\ref{sec:annotation}), we expanded the binary definition of facilitation to three categorical variables: \texttt{Positive}, \texttt{Negative} and \texttt{None}. Furthermore, since the task is inherently subjective, each of these categories was given a ordinal confidence rating of 1--5 in each response. 
+
+\paragraph{Positive AND Negative} Finally, during analysis we realized that in many cases the survey participants decided that facilitation should occur, but could not discern whether this intervention should be positive or negative. In terms of our previous categorical schema, this phenomenon manifested as low ratings for \texttt{None} and simultaneously high ratings for \texttt{Positive} and \texttt{Negative}. In order to not lose this potentially valuable information, we transform the fine-grained, ordinal label per type adopting a multiclass schema (\texttt{Positive}, \texttt{Negative}, \texttt{None}, \texttt{Both}), as shown in Table~\ref{tab:label_transform}.
+
+
+\section{Facilitative Prediction Experiments}
+\label{app:experiments}
 
 \subsection{Can LLMs understand what facilitation is?}
-\label{sec:appendix:experiments:facilitator}
+\label{app:experiments:facilitator}
 
 One way of establishing whether the models can understand the concept of facilitation is exploring whether these models can distinguish between facilitative and non-facilitative comments in the first place. Their performance in this task should give us an indication of how well-defined the task is in relevant \ac{nlp} datasets. We thus explore \emph{``facilitator detection''} a \ac{nlu} task which aims to identify whether a comment was made by a facilitator (Def.~\ref{def:facilitator}). This task has been explored exactly once by \citet{shiota2018_facilitators}, although the authors used hand-crafted features instead of relying exclusively on the language used by the facilitators, and used only role-play focused scenarios instead of real-life facilitation ones.
 
@@ -607,13 +646,13 @@ Table \ref{tab:facilitator-detection} presents the performance of these same mod
 
 
 \subsection{LLM Sensitivity Ablations}
-\label{sec:appendix:experiments:ablations}
+\label{app:experiments:ablations}
 
 We run an ablation study using five instruction prompt variants on a 20\% sample of the dataset. We generated these variants via a local Gemma-4 model (specifically, the \url{https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF} variant, generated using the TextGen open-source software---\url{https://github.com/oobabooga/textgen}) in order to avoid researcher bias, and verified the resulting output. Two of these variants include specific instructions warning against over-intervention (``cautious 1,2''). The pairwise agreement scores for four models can be found in Table~\ref{tab:pairwise_similarity} and the instruction variants in App.~\ref{app:guidelines:llm:ablation}. We find that LLM judgments seem to remain broadly consistent, even with large changes to the LLM input for the specific task. Some inconsistencies do exist, as is the case with all LLM-related tasks~\citep{bisbee_2023}, and some models (such as Qwen-7B) may be more sensitive than others.
 
 \begin{table*}[t]
 	\centering
-    \small
+	\small
 	\begin{tabular}{llcccccc}
 		\toprule
 		\textbf{Run A} & \textbf{Run B} & \textbf{LLaMa-70B} & \textbf{Qwen-32B} & \textbf{OLMo-32B} & \textbf{OLMo-7B} & \textbf{Qwen-7B} & \textbf{Llama-8B} \\
@@ -661,12 +700,12 @@ We also executed a similar ablation experiment as the one above, but instead of 
 
 
 \subsection{One Model to Rule Them All?}
-\label{sec:appendix:experiments:one-model}
+\label{app:experiments:one-model}
 
-Since comments in the written and oral datasets are fundamentally different (\S\ref{sec:app:dataset:exploratory}), we would be tempted to train different models for each. This decision is not obvious however, since it is likely that the model can internally distinguish between oral and written speech. If that occurs, the differences between the texts should not negatively affect the model; in fact, training the model on all datasets could allow it to transfer knowledge between the two text modalities. Table~\ref{tab:merged_metrics} shows the performance of the same model when trained only on oral and written datasets, compared to when trained on the all datasets at once. We find that the models perform better when trained on different splits.
+Since comments in the written and oral datasets are fundamentally different (\S\ref{app:dataset:exploratory}), we would be tempted to train different models for each. This decision is not obvious however, since it is likely that the model can internally distinguish between oral and written speech. If that occurs, the differences between the texts should not negatively affect the model; in fact, training the model on all datasets could allow it to transfer knowledge between the two text modalities. Table~\ref{tab:merged_metrics} shows the performance of the same model when trained only on oral and written datasets, compared to when trained on the all datasets at once. We find that the models perform better when trained on different splits.
 
 \begin{table}[ht]
-    \small
+	\small
 	\centering
 	\begin{tabular}{lrrrr}
 		\toprule
@@ -692,7 +731,7 @@ Since comments in the written and oral datasets are fundamentally different (\S\
 
 
 \subsection{Decision Thresholds}
-\label{sec:appendix:experiments:thresholds}
+\label{app:experiments:thresholds}
 
 An advantage of using \ac{eo} classifiers instead of LLMs is that we can quantitatively alter the performance of the classifier by tuning the thresholds required for a comment to trigger an intervention. By making the model more conservative (increasing the threshold), we could hope that we can avoid unnecessary interventions, while making it less conservative (decreasing the threshold) we could make it more proactive.
 
@@ -767,10 +806,10 @@ Table~\ref{tab:facilitator-prediction-collapsed} shows the collapsed cases (F1$_
 
 
 \section{Human Survey}
-\label{sec:app:human-annotation}
+\label{app:human-annotation}
 
 \subsection{Facilitative Training}
-\label{sec:app:human-annotation:tactics}
+\label{app:human-annotation:tactics}
 
 Before the main survey on facilitative intervention, all participants were extensively trained on currently established facilitative tactics. This task aimed to familiarize the participants with what constitutes a facilitative intervention, as well as how professional facilitators operate in real-life scenarios.
 
@@ -778,7 +817,7 @@ Specifically, we split the participants into three groups, each of which was ass
 
 
 \subsection{Positive vs. Negative Reinforcement}
-\label{sec:app:human-annotation:positive-vs-negative}
+\label{app:human-annotation:positive-vs-negative}
 
 \begin{table}[t]
 	\centering
@@ -834,34 +873,8 @@ The distinction between positive/negative reinforcement is present to suggested 
 The facilitative taxonomy proposed in Fora does not include any tactics that could be unambiguously considered as negative reinforcement, which is expected, since facilitators deployed in the relevant study were supposed to only act as coordinators. Notably, several tactics may simultaneously exhibit both positive and negative characteristics across all taxonomies, depending on context and the exact implementation used by the facilitator. We therefore use these taxonomies only as guidance during annotation, and refer the reader to the original works for a more comprehensive description and analysis of facilitation strategies.
 
 
-\subsection{Label Transformation}
-\label{sec:app:human-annotation:label-transform}
-
-\begin{table}[t]
-	\centering
-	
-	\begin{tabular}{cccc}
-		\toprule
-		\textbf{Positive} & \textbf{Negative} & \textbf{Neither} & \textbf{Final} \\
-		\midrule
-		\xmark & \xmark & \xmark & None (0) \\
-		\cmark & \xmark & \xmark & Positive (1) \\
-		\xmark & \cmark & \xmark & Negative (2) \\
-		\xmark & \xmark & \cmark & None (0) \\
-		\cmark & \cmark & \xmark & Both (3) \\
-		\cmark & \xmark & \cmark & Positive (1) \\
-		\xmark & \cmark & \cmark & Negative (2) \\
-		\cmark & \cmark & \cmark & Both (3) \\
-		\bottomrule
-	\end{tabular}
-	\caption{Reinforcement label transformations.}
-	\label{tab:label_transform}
-\end{table}
-To efficiently calculate intra-participant consistency, we transform the fine-grained, ordinal label per type adopting a multiclass schema. We define a threshold of >=3 and then using Table~\ref{tab:label_transform} we relabel the items. 
-
-
 \subsection{Are Facilitative Tendencies Dataset-Dependent?}
-\label{sec:app:human-annotation:datasets}
+\label{app:human-annotation:datasets}
 
 \begin{figure}[t]
 	\centering
@@ -874,7 +887,7 @@ Facilitative tendencies generally follow a conservative pattern, with no reinfor
 
 
 \subsection{Participant Consistency}
-\label{sec:app:human-annotation:intra-agreement}
+\label{app:human-annotation:intra-agreement}
 
 To evaluate the consistency of individual participants, we measured intra-participant agreement using purposefully repeated instances of identical discussions. 
 
@@ -888,7 +901,6 @@ We report results in Table~\ref{tab:intra_agreement}. Most participants demonstr
 		\toprule
 		\textbf{participant} & \textbf{Agreement (\%)} \\
 		\toprule
-		% A1  & 55.56 \\
 		A2  & 100.00 \\
 		A3  & 66.67 \\
 		A4  & 88.89 \\
@@ -907,11 +919,11 @@ We report results in Table~\ref{tab:intra_agreement}. Most participants demonstr
 
 
 \subsection{Participants Selection and Coordination}
-\label{sec:app:participants_select}
+\label{app:participants_select}
 
 \paragraph{Selection} Participant selection required a response to the public call, followed by a round of interviews to verify that candidates fulfilled the criteria for the role. All successful participants held a BA in Languages, Communication, or History, and an MSc in either Digital Humanities or Language Technology. They also had experience with NLP annotation tasks, such as sentiment analysis and toxicity detection. We would also like to highlight that controls were conducted before the survey (hiring), during the survey (training and discussion), and after the survey (removal of outlier or inconsistent participants), to ensure the highest quality of results.
 
-\paragraph{Coordination} The coordination of the project was largely based on weekly meetings that allowed the integration of participant feedback and potential changes to our survey methodology. An overview of the project timeline can be found in Table~\ref{tab:timeline}. Before the commencement of the main survey, two important preparatory steps were carried out. The first was familiarizing participants with facilitation tactics; more information can be found in Section~\ref{sec:app:human-annotation:tactics}. 
+\paragraph{Coordination} The coordination of the project was largely based on weekly meetings that allowed the integration of participant feedback and potential changes to our survey methodology. An overview of the project timeline can be found in Table~\ref{tab:timeline}. Before the commencement of the main survey, two important preparatory steps were carried out. The first was familiarizing participants with facilitation tactics; more information can be found in Section~\ref{app:human-annotation:tactics}. 
 
 The second was a pilot round with $\sim$160 instances, which allowed us to better understand the challenges of the task. For example, one major concern was time. Depending on instance length, labeling took between 2 and 5 minutes. The pilot helped us pin down to how much time the annotators needed. This led us to break the task into smaller subtasks, spread across almost 3 months (see Phases 5 and 6 in Table~\ref{tab:timeline}), with annotators labeling about 400 instances per round. Moreover, during this pilot, the annotators noticed coding errors, as well as malformed instances, which we addressed by adding malformed-instance flagging as an option. Finally, the pilot helped us refine the definitions of positive and negative reinforcement. For example, how to handle `yes' as a comment, which we considered positive if it had a positive impact on the conversation and was not used merely as hedging. Figure~\ref{fig:instances_pilot} show the frequencies of each class on a likert scale for the pilot. Because of the malformed instances in the initial dataset, and because the task itself changed between the pilot and the final survey, the two are not directly comparable. We nevertheless release the raw pilot survey files in the Supporting Material.
 
@@ -943,8 +955,9 @@ The second was a pilot round with $\sim$160 instances, which allowed us to bette
 	\label{tab:timeline}
 \end{table}
 
+
 \subsection{Survey Guidelines} 
-\label{sec:app:guidelines}
+\label{app:guidelines}
 
 \textbf{Survey Guidelines: Type of Reinforcement Needed in Comment Threads}
 
@@ -963,7 +976,6 @@ Your job is to read each comment in its conversational context and assign a stre
 Even though your intervention will be delivered at the end of the thread, the reinforcement can refer to any point in the conversation, not just at the end. It can refer to something said earlier, not just the last comment.
 
 You are not being asked whether that conversation correlates to positive or negative reinforcement, but rather whether you, personally, would have used positive or negative reinforcement at a given point. Keep in mind that too many interventions on the moderator’s part may result in an adverse reaction from the participants; no one wants to be constantly told what to say or how to say it.
-
 
 \textbf{Important Notes}
 \begin{itemize}
@@ -1038,12 +1050,12 @@ Apply the same standards across all comments. Avoid guessing or over-interpretin
 
 
 \section{LLM Prompts}
-\label{sec:app:guidelines:llm}
+\label{app:guidelines:llm}
 
 \subsection{Main Prompts}
 
 \subsubsection{Yes/No Intervention}
-\label{sec:app:guidelines:llm:yes-no}
+\label{app:guidelines:llm:yes-no}
 
 You are an expert specializing in online moderation and facilitation.
 You will be presented with a comment and the comments made before it.
